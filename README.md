@@ -10,6 +10,10 @@ Falls schon offen Claude über den Task-Manager schließen
 
 
 
+https://github.com/user-attachments/assets/3dcdfefe-008f-40fc-813b-070b20dacec4
+
+
+
 ## Installation
 
 ### 1. Repository klonen
