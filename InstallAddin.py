@@ -1,15 +1,28 @@
 import os
 import shutil
 
+# Pfad zum Addin-Ordner in deinem Repository
+source = os.path.join(os.getcwd(), "MCP")  # Dein Addin-Ordner
 
-"""
-Kopiert den Ordner "fusion_addin" in den AddIns-Ordner von Fusion 360.
-"""
-source = os.path.join(os.getcwd(), "MCP") # Pfad zum Ordner "fusion_addin" im aktuellen Verzeichnis
-dest = os.path.expanduser(r"~\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns")
+# Zielordner in Fusion AddIns (eigenen Unterordner verwenden)
+dest = os.path.expanduser(
+    r"~\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns\fusion_addin_mcp"
+)
+
+# Existierenden Addin-Unterordner löschen, falls er schon existiert
 if os.path.exists(dest):
-    shutil.rmtree(dest)
+    try:
+        shutil.rmtree(dest, ignore_errors=True)
+        print("Vorherige Version des Addins entfernt.")
+    except PermissionError:
+        print("Einige Dateien konnten nicht gelöscht werden. Fusion 360 eventuell schließen und erneut versuchen.")
 
-shutil.copytree(source, dest)
+# Addin kopieren
+try:
+    shutil.copytree(source, dest)
+    print("Add-In installiert!")
+except Exception as e:
+    print(f"Fehler beim Kopieren des Addins: {e}")
 
-print("Add-In installiert")
+# Optional: Erfolgsmeldung
+print(f"Addin befindet sich jetzt in: {dest}")
