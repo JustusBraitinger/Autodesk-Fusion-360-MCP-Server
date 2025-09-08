@@ -5,6 +5,8 @@
 - Autodesk Fusion 360
 - MCP-CLI (`uv`)
 - Claude Desktop (oder ein anderer MCP-kompatibler Client)
+Claude erst öffnen, wenn InstallAddin.py ausgeführt wurde!
+Falls schon offen Claude über den Task-Manager schließen
 
 
 
@@ -19,13 +21,13 @@ cd FusionMCP
 ### 2. Pakete installieren
 
    ```pip install uv mcp fastmcp
-      cd mcp_server
+      cd Server
       python -m pip install -r requirements.txt
 
 ```
 ### 3. Addin installieren
 ```bash
-python Install.Addin.py
+python InstallAddin.py
 ```
 ### 4. MCP Server starten
 ```bash
@@ -33,3 +35,5 @@ uv run mcp install MCP_Server.py
 
 ```
 MCP Server läuft lokal und kann in Claude genutzt werden.
+Um zu überprüfen ob der Server in Claude läuft gehe auf die Einstellung -> Entwickler. Da sollte der MCP Server TEST laufen!
+
