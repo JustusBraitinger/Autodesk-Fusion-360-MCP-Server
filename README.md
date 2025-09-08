@@ -18,7 +18,8 @@ cd FusionMCP
 ```
 ### 2. Pakete installieren
 
-   ```cd mcp_server
+   ```pip install uv mcp fastmcp
+      cd mcp_server
       pip install -r requirements.txt
 ```
 ### 3. Addin installieren
