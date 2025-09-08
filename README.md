@@ -4,7 +4,7 @@
 
 - Autodesk Fusion 360
 - Claude Desktop (oder ein anderer MCP-kompatibler Client)
-Claude erst öffnen, wenn InstallAddin.py ausgeführt wurde!
+Claude erst öffnen, wenn InstallAddin.py ausgeführt wurde bzw. das Addin manuell in Fusion hinzugefügt wurde!
 Falls schon offen Claude über den Task-Manager schließen
 
 
