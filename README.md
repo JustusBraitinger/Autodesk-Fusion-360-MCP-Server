@@ -7,11 +7,7 @@
 - MCP-CLI (`uv`)
 - Claude Desktop (oder ein anderer MCP-kompatibler Client)
 
-## Installation
 
-1. Repository klonen:
-
----
 
 ## Installation
 
@@ -26,3 +22,13 @@ cd FusionMCP
    ```cd mcp_server
       pip install -r requirements.txt
 ```
+### 3. Addin installieren
+```bash
+python Install.Addin.py
+```
+### 4. MCP Server starten
+```bash
+uv run mcp install MCP_Server.py
+
+```
+MCP Server läuft lokal und kann in Claude genutzt werden.
