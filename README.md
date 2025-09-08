@@ -29,17 +29,12 @@ cd FusionMCP
 
 ```
 ### 3. Addin installieren
-// Funktioniert eigentlich nict direkt lieber manuell machen!
-Falls das Addin trotzdem nicht auftaucht, muss es in Fusion manuell hinzugefügt werden.
+Zur Zeit muss es in Fusion manuell hinzugefügt werden.
 Hierfür öffnet man Fusion und geht unter Utilities auf ADD-INS
 Jetzt auf das Plus drücken und  "Script or add-in from device" auswählen.
-Den Ordner MCP aus dem Repo auswählen und bestätigen
+Den Ordner MCP aus dem Repo bzw. den Ordner auswählen und bestätigen
 
 
-In Zukunft :
-```bash
-python InstallAddin.py
-```
 
 ### 4. MCP Server starten
 ```bash
