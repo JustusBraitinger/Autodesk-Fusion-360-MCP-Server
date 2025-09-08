@@ -4,15 +4,15 @@ import shutil
 source = os.path.join(os.getcwd(), "MCP")  # Dein Addin-Ordner
 
 dest = os.path.expanduser(
-    r"~\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns\fusion_addin_mcp"
+    r"~\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns\MCP"
 )
 
 if os.path.exists(dest):
     try:
         shutil.rmtree(dest, ignore_errors=True)
-        print("Vorherige Version des Addins entfernt.")
+        print("Gleiches Addin entfernt")
     except PermissionError:
-        print("Einige Dateien konnten nicht gelöscht werden. Fusion 360 eventuell schließen und erneut versuchen.")
+        print("Schließe Fusion")
 
 # Addin kopieren
 try:
@@ -22,4 +22,5 @@ except Exception as e:
     print(f"Fehler beim Kopieren des Addins: {e}")
 
 print(f"Addin befindet sich jetzt in: {dest}")
+
 
