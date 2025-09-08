@@ -3,7 +3,6 @@
 ## Voraussetzungen
 
 - Autodesk Fusion 360
-- MCP-CLI (`uv`)
 - Claude Desktop (oder ein anderer MCP-kompatibler Client)
 Claude erst öffnen, wenn InstallAddin.py ausgeführt wurde!
 Falls schon offen Claude über den Task-Manager schließen
