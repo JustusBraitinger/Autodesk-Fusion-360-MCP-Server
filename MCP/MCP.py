@@ -22,7 +22,15 @@ newParam = None # Variable für neuen Parameter, falls ein neuer Parameter hinzu
 
 
 def draw_Box(design,ui):
+    """
+    Erstellung einer Box in drei Schritte, ( Fast unbegrenzt erweiterbar)
+
+    1. Neuer Sketch auf der xy Ebene
+    2. Rechteck zeichnen
+    3. Extrudieren des Rechtecks zu einer Box (3D)
+    """
     try:
+
         global Box
         rootComp = design.rootComponent #Holen der Rotkomponente
         sketches = rootComp.sketches
@@ -54,16 +62,24 @@ def draw_Box(design,ui):
 # Parameter aus Fusion holen
 ##################################
 def get_model_parameters(design):
+    """
+    Es gibt keine direkte Methode um nur die Modellparameter zu holen
+    Deswegen nehmen wir alle Parameter und filtern die UserParameter raus
+    ModelParameter sind alle Parameter die nicht vom User erstellt wurden
+
+    Rückgabe:
+    Liste von Dictionaries mit den Keys: Name, Wert, Einheit, Expression
+    """
     model_params = []
     user_params = design.userParameters
 
-    for param in design.allParameters:
+    for param in design.allParameters: #Iteration über alle Parameter
         is_user_param = False
-        for i in range(user_params.count):
+        for i in range(user_params.count): 
             if user_params.item(i) == param:
                 is_user_param = True
                 break
-        if not is_user_param:
+        if not is_user_param: # Wenn es kein UserParameter ist dann ist es ein ModelParameter
            
             param_info = {
                 "Name": str(param.name),
@@ -79,7 +95,18 @@ def get_model_parameters(design):
 ##################################
 
 def set_parameter(design, ui, name, value):
-    changeParam = design.allParameters.itemByName(name)
+    """
+    Funktion um einen Parameter zu ändern
+    Hier dürfen wir auf den Main-Thread zugreifen, da die Funktion im Polling aufgerufen wird
+    Input (Parameter):
+    name: Name des Parameters der geändert werden soll
+    value: Neuer Wert der gesetzt werden soll
+
+
+    Rückgabe: 
+    None, da die Änderung direkt im Design erfolgt
+    """
+    changeParam = design.allParameters.itemByName(name) 
     changeParam.expression = value
 
 
@@ -90,9 +117,19 @@ def set_parameter(design, ui, name, value):
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         """
-        Hier schreibe wir die verschiedenen Endpoits rein
-        Es handelt sich hier um GET Requests, also nur Daten abfragen
-        
+        Verarbeitet HTTP GET-Anfragen
+
+
+        Es gibt 3 Routen:
+        /count_parameters: Gibt die Anzahl der Modellparameter zurück
+        /list_parameters: Gibt eine Liste aller Modellparameter zurück
+        /Box: Erstellt eine Box im Design
+
+
+        Wichtig:
+        Hier darf auf keinen Fall Zugriff auf die Fusion API erfolgen, da der HTTP Server in einem eigenen Thread läuft 
+        und die Fusion API nicht threadsicher ist.
+        Wenn hier zugegriffen wird, stürzt Fusion ab.
         """
         try:
             
@@ -112,9 +149,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
 
 
-            #TODO GEHT NOCH NICHT!!!
-            elif self.path == '/Box': 
-                Box = True #Setzen des globalen Parameters um die polling zu "aktivieren"
+            elif self.path == '/Box':
+                Box = True  # Setzen des globalen Parameters um die polling zu "aktivieren"
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -184,11 +220,12 @@ def run_server():
 ##################################
 def polling_loop(design,ui):
     """
-    Hier kommen alle Funktionen rein, die regelmäßig im Main-Thread ausgeführt werden müssen also 
-    Funktionen die auf Parameter zugreifen oder die Fusion API verwenden
-    Das ist notwendig, da die Fusion API nicht threadsicher ist, was bedeutet, dass sie nur im Hauptthread aufgerufen werden darf
-    Wenn wir unsere Daten nur im Hauptthread aktualisieren, werden sie sich nicht live aktualisieren, wenn wir in Fusion Parameter ändern
-    Polling ist eine Methode, bei der in regelmäßigen Abständen überprüft wird, ob sich etwas geändert hat
+    Hier aktualisieren wir in regelmäßigen Abständen die Liste der Modellparameter
+
+    Aufgaben :
+    - Prüfung ob ein Parameter geändert werden soll (changeParam und newParam sind nicht None)
+    - Prüfung ob eine Box erstellt werden soll (Box ist nicht None)
+    - Aktualisierung der ModelParameterSnapshot Liste
     """
     global ModelParameterSnapshot, _stop_polling, changeParam, newParam, Box
     while not _stop_polling:
@@ -211,6 +248,17 @@ def polling_loop(design,ui):
 
 ##Add-In Event Handler
 def run(context):
+    """
+    Hier startet das Add-In
+
+    - Initialer Snapshot der Modellparameter
+    - Starten des HTTP Servers im Hintergrund (Thread 1)
+    - Starten der Polling-Funktion im Hintergrund (Thread 2)
+
+    
+    """
+
+
     global _stop_polling
     
     try:
