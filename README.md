@@ -30,6 +30,7 @@ cd FusionMCP
 
 ```
 ### 3. Addin installieren
+// Funktioniert eigentlich nict direkt lieber manuell machen!
 ```bash
 python InstallAddin.py
 ```
