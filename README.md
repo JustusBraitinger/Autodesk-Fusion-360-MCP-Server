@@ -3,7 +3,6 @@
 ## Voraussetzungen
 
 - Autodesk Fusion 360
-- Python 3.11+
 - MCP-CLI (`uv`)
 - Claude Desktop (oder ein anderer MCP-kompatibler Client)
 
