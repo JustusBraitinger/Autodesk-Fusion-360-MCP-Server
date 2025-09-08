@@ -9,5 +9,9 @@
 
 1. Pakete installieren:
 ```bash
+
+gitclone
 cd mcp_server
 pip install -r requirements.txt
+uv run mcp install MCP_Server.py 
+
