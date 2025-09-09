@@ -44,3 +44,20 @@ uv run mcp install MCP_Server.py
 MCP Server läuft lokal und kann in Claude genutzt werden.
 Um zu überprüfen ob der Server in Claude läuft gehe auf die Einstellung -> Entwickler. Da sollte der MCP Server TEST laufen!
 
+
+
+
+
+
+
+### Architektur
+
+## 1.
+Das Fusion Addin wird manuell unter Utilities -> Addin gestartet
+Das Addin startet einen HTTP Server und hostet ihn in einem Nebenthread, da der Fusion Hauptthred nicht benutzt werden darf
+
+
+
+
+
+
