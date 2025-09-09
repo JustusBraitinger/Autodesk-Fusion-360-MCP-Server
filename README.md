@@ -1,5 +1,9 @@
 # Fusion MCP Projekt
 
+
+https://github.com/user-attachments/assets/73f32a3d-0750-444c-8abe-ff366b0dc07d
+
+
 ## Voraussetzungen
 
 - Autodesk Fusion 360
@@ -9,7 +13,6 @@ Falls schon offen Claude über den Task-Manager schließen
 
 
 
-https://github.com/user-attachments/assets/3dcdfefe-008f-40fc-813b-070b20dacec4
 
 
 
