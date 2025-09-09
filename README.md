@@ -1,7 +1,10 @@
 # Fusion MCP Projekt
 
 
-https://github.com/user-attachments/assets/73f32a3d-0750-444c-8abe-ff366b0dc07d
+
+
+https://github.com/user-attachments/assets/3c373629-e4f4-4531-adb0-3b57a1ad8f05
+
 
 
 ## Voraussetzungen
