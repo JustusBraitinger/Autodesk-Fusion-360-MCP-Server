@@ -30,11 +30,19 @@ def change_parameter(name: str, value: str):
     return response.json()
 
 @mcp.tool()
-def draw_box():
-    r = requests.get("http://localhost:5000/Box")
+def draw_box(height_value:str, width_value:str, depth_value:str):
+    url = "http://localhost:5000/Box"
 
-    data = r.json()
-    return data
+    data = {
+        "height":height_value,
+        "width": width_value,
+        "depth": depth_value
+    }
+
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+
+    return response.json()
+
 
 @mcp.prompt()
 def prompt():
