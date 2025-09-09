@@ -17,14 +17,17 @@ _stop_polling = False
 changeParam = None
 Box = None # Am Anfang keine Box deswegen halt NOne
 newParam = None # Variable für neuen Parameter, falls ein neuer Parameter hinzugefügt werden soll
+BoxHeight = 5
+BoxWidth = 5
+BoxDepth = 5
 # #################
 # Box bauen
 
 
-def draw_Box(design,ui):
+def draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth):
     """
     Erstellung einer Box in drei Schritte, ( Fast unbegrenzt erweiterbar)
-
+    Standartmäßig 5x5x5 Box
     1. Neuer Sketch auf der xy Ebene
     2. Rechteck zeichnen
     3. Extrudieren des Rechtecks zu einer Box (3D)
@@ -39,14 +42,14 @@ def draw_Box(design,ui):
 
         sketch = sketches.add(xyPlane) # Einen neuen Sketch auf der xy Ebene erstellen
         lines = sketch.sketchCurves.sketchLines
-        rect = lines.addCenterPointRectangle(adsk.core.Point3D.create(0,0,0), adsk.core.Point3D.create(5,5,0)) #Koordinaten des Rechtecks
+        rect = lines.addCenterPointRectangle(adsk.core.Point3D.create(0,0,0), adsk.core.Point3D.create(BoxWidth/2, BoxHeight/2, 0)) #Koordinaten des Rechtecks
         prof = sketch.profiles.item(0)
 
 
 
         extrudes = rootComp.features.extrudeFeatures # Muss man so machen um die Metoden von ExtrudeFeatures zu benutzen, die braucuhen wir um die Box zu extrudieren (3D)
         extInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
-        distance = adsk.core.ValueInput.createByReal(5)
+        distance = adsk.core.ValueInput.createByReal(BoxDepth)
         extInput.setDistanceExtent(False, distance)
         extrude = extrudes.add(extInput)
         
@@ -70,8 +73,8 @@ def get_model_parameters(design):
     Rückgabe:
     Liste von Dictionaries mit den Keys: Name, Wert, Einheit, Expression
     """
-    model_params = []
-    user_params = design.userParameters
+    model_params = [] # Liste für die Modellparameter
+    user_params = design.userParameters # Alle UserParameter holen um sie mit den anderen zu vergleichen um ModelParameter zu filtern
 
     for param in design.allParameters: #Iteration über alle Parameter
         is_user_param = False
@@ -119,12 +122,9 @@ class Handler(BaseHTTPRequestHandler):
         """
         Verarbeitet HTTP GET-Anfragen
 
-
-        Es gibt 3 Routen:
+        Es gibt 2 Routen:
         /count_parameters: Gibt die Anzahl der Modellparameter zurück
         /list_parameters: Gibt eine Liste aller Modellparameter zurück
-        /Box: Erstellt eine Box im Design
-
 
         Wichtig:
         Hier darf auf keinen Fall Zugriff auf die Fusion API erfolgen, da der HTTP Server in einem eigenen Thread läuft 
@@ -132,77 +132,80 @@ class Handler(BaseHTTPRequestHandler):
         Wenn hier zugegriffen wird, stürzt Fusion ab.
         """
         try:
-            
             global ModelParameterSnapshot
-            global Box
             if self.path == '/count_parameters':
                 count = len(ModelParameterSnapshot)
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"user_parameter_count": count}).encode('utf-8'))
-
             elif self.path == '/list_parameters':
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
-
-
-            elif self.path == '/Box':
-                Box = True  # Setzen des globalen Parameters um die polling zu "aktivieren"
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"Boxstaturs": "Box wurde erfolgreich erstellt ;)"} ).encode('utf-8'))
-
             else:
                 self.send_error(404, 'Not Found')
-
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             error_msg = f"Error: {str(e)}\nTraceback: {traceback.format_exc()}"
             self.wfile.write(json.dumps({"error": error_msg}).encode('utf-8'))
+
+
     def do_POST(self):
         """
-        Hier machen wir den Push Request rein
-        Das Ziel ist eine Route die einen Parameter ändert nach Namen
-        Der User soll in der Lage sein einen Parameter zu ändern indem er einen HTTP Request mit dem Parameternamen und dem neuen Wert sendet
-        Den Namen und den Wert holen wir aus der URL
+        Verarbeitet HTTP POST-Anfragen
 
+        /set_parameter: Setzt einen Modellparameter
+        /Box: Erstellt eine Box mit übergebenen Werten
         """
-
-
         try:
-            global changeParam, newParam
+            global changeParam, newParam, Box, BoxHeight, BoxWidth, BoxDepth
             if self.path.startswith('/set_parameter'):
-
                 content_length = int(self.headers['Content-Length']) 
-                post_data = self.rfile.read(content_length) # Daten lesen die vom MCP Client gesendet wurden
+                post_data = self.rfile.read(content_length)
                 data = json.loads(post_data)
-
-                #Auslesen des Namens und des neuen Wertesn
                 name = data.get('name')
                 value = data.get('value')
-                changeParam = name # Setzen des globalen Parameters der geändert werden soll
-                newParam = value   # Setzen des neuen Wertes der gesetzt werden soll
+                changeParam = name
+                newParam = value
                 if name and value:
                     self.send_response(200)
                     self.send_header('Content-type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({"message": f"Parameter {name} wird auf {value} gesetzt."}).encode('utf-8'))
-
-
-
-
+            elif self.path == '/Box':
+                
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                params = json.loads(post_data) if post_data else {}
+                Box = True
+                try:
+                    BoxHeight = float(params.get('height', 5))
+                except (ValueError, TypeError):
+                    BoxHeight = 5
+                try:
+                    BoxWidth = float(params.get('width', 5))
+                except (ValueError, TypeError):
+                    BoxWidth = 5
+                try:
+                    BoxDepth = float(params.get('depth', 5))
+                except (ValueError, TypeError):
+                    BoxDepth = 5
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"Boxstatus": "Box wurde erfolgreich erstellt mit den Werten: Höhe = {}, Breite = {}, Tiefe = {}".format(BoxHeight, BoxWidth, BoxDepth)}).encode('utf-8'))
+            else:
+                self.send_error(404, 'Not Found')
         except Exception as e:
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             error_msg = f"Error: {str(e)}\nTraceback: {traceback.format_exc()}"
-            self.wfile.write(json.dumps({"error": error_msg}).encode('utf-8')) 
+            self.wfile.write(json.dumps({"error": error_msg}).encode('utf-8'))
 
 
 
@@ -227,7 +230,7 @@ def polling_loop(design,ui):
     - Prüfung ob eine Box erstellt werden soll (Box ist nicht None)
     - Aktualisierung der ModelParameterSnapshot Liste
     """
-    global ModelParameterSnapshot, _stop_polling, changeParam, newParam, Box
+    global ModelParameterSnapshot, _stop_polling, changeParam, newParam, Box, BoxHeight, BoxWidth, BoxDepth
     while not _stop_polling:
         try:
             ModelParameterSnapshot = get_model_parameters(design)
@@ -236,8 +239,11 @@ def polling_loop(design,ui):
                 changeParam = None
                 newParam = None
             if Box :
-                draw_Box(design,ui)
+                draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth)
                 Box = None
+                BoxHeight = None
+                BoxWidth = None
+                BoxDepth = None
         except:
             pass
         time.sleep(_polling_interval)
