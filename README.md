@@ -55,7 +55,9 @@ Um zu überprüfen ob der Server in Claude läuft gehe auf die Einstellung -> En
 ## 1.
 Das Fusion Addin wird manuell unter Utilities -> Addin gestartet
 Das Addin startet einen HTTP Server und hostet ihn in einem Nebenthread, da der Fusion Hauptthred nicht benutzt werden darf
-
+```python
+   threading.Thread(target=run_server, daemon=True).start() # Der erste Thread startet den HTTP Server im Hintergrund
+```
 
 
 
