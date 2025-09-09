@@ -72,7 +72,7 @@ Das Addin startet einen HTTP Server und hostet ihn in einem Nebenthread, da der 
 ### Zukünfitges
 
 ## 1. 
-Witzenmann-Logo mit Prompt erstellen
-Vorgegebene Prompts definieren für Ausstellung im Digital Lab
+Witzenmann-Logo mit Prompt erstellen  
+Vorgegebene Prompts definieren für Ausstellung im Digital Lab  
 
 
