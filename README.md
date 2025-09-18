@@ -1,17 +1,16 @@
-Fusion MCP Project
+###Fusion MCP Project
 
 https://github.com/user-attachments/assets/3c373629-e4f4-4531-adb0-3b57a1ad8f05
 
-Prerequisites
+###Prerequisites
 
 Autodesk Fusion 360
-
 Claude Desktop (or any other MCP-compatible client)
 
 Note: Open Claude only after InstallAddin.py has been executed or the add-in has been manually added in Fusion!
 If Claude is already open, close it via Task Manager.
 
-Installation
+##Installation
 1. Clone the repository
 git clone https://github.com/JustusBraitinger/FusionMCP.git
 cd FusionMCP
