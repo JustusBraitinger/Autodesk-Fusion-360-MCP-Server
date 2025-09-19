@@ -4,7 +4,12 @@ import threading
 import json
 import time
 
-
+"""
+Ideen für die Zukunft:
+- Löschen von Parametern
+- Hinzufügen von Parametern
+- Exportieren von Modellen (STL, STEP, etc.)
+- HTTPs Unterstützung"""
 
 
 
@@ -20,8 +25,88 @@ newParam = None # Variable für neuen Parameter, falls ein neuer Parameter hinzu
 BoxHeight = 5
 BoxWidth = 5
 BoxDepth = 5
+Witzenmann = None
 # #################
 # Box bauen
+
+
+def draw_Witzenmann(design, ui):
+
+
+    try:
+        global Witzenmann
+    
+
+        # Neues Design erstellen
+        
+        rootComp = design.rootComponent
+
+        # Neues Sketch auf XY-Ebene
+        sketches = rootComp.sketches
+        xyPlane = rootComp.xYConstructionPlane
+        sketch = sketches.add(xyPlane)
+
+        points1 = [
+            (8.283,10.475),
+            (8.283,6.471),
+            (-0.126,6.471),
+            (8.283,2.691),
+            (8.283,-1.235),
+            (-0.496,-1.246),
+            (8.283,-5.715),
+            (8.283,-9.996),
+            (-8.862,-1.247),
+            (-8.859,2.69),
+            (-0.639,2.69),
+            (-8.859,6.409),
+            (-8.859,10.459)
+        ]
+
+        for i in range(len(points1)-1):
+            start = adsk.core.Point3D.create(points1[i][0], points1[i][1], 0)
+            end   = adsk.core.Point3D.create(points1[i+1][0], points1[i+1][1], 0)
+            sketch.sketchCurves.sketchLines.addByTwoPoints(start, end)
+        # Letzten Punkt mit dem ersten verbinden
+        sketch.sketchCurves.sketchLines.addByTwoPoints(
+            adsk.core.Point3D.create(points1[-1][0], points1[-1][1], 0),
+            adsk.core.Point3D.create(points1[0][0], points1[0][1], 0)
+        )
+
+        points2 = [
+            (-3.391,-5.989),
+            (5.062,-10.141),
+            (-8.859,-10.141),
+            (-8.859,-5.989)
+        ]
+
+        for i in range(len(points2)-1):
+            start = adsk.core.Point3D.create(points2[i][0], points2[i][1], 0)
+            end   = adsk.core.Point3D.create(points2[i+1][0], points2[i+1][1], 0)
+            sketch.sketchCurves.sketchLines.addByTwoPoints(start, end)
+        # Letzten Punkt mit dem ersten verbinden
+        sketch.sketchCurves.sketchLines.addByTwoPoints(
+            adsk.core.Point3D.create(points2[-1][0], points2[-1][1], 0),
+            adsk.core.Point3D.create(points2[0][0], points2[0][1], 0)
+        )
+
+     
+        extrudes = rootComp.features.extrudeFeatures
+        distance = adsk.core.ValueInput.createByReal(2.0)
+
+        # Extrudiere alle Profile
+        for i in range(sketch.profiles.count):
+            prof = sketch.profiles.item(i)
+            extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+            extrudeInput.setDistanceExtent(False, distance)
+            extrudes.add(extrudeInput)
+
+        Witzenmann = None
+
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
 
 
 def draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth):
@@ -44,6 +129,7 @@ def draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth):
         lines = sketch.sketchCurves.sketchLines
         rect = lines.addCenterPointRectangle(adsk.core.Point3D.create(0,0,0), adsk.core.Point3D.create(BoxWidth/2, BoxHeight/2, 0)) #Koordinaten des Rechtecks
         prof = sketch.profiles.item(0)
+        
 
 
 
@@ -61,6 +147,18 @@ def draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth):
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
+
+
+
+def export_as_STL(design,ui, FilePath):
+    rootComp = design.rootComponent # Hier holen wir die Root-Komponente, also die Hauptkomponente des Modells
+
+    exportMgr = design.exportManager
+    stlRootOptions = exportMgr.createSTLExportOptions(rootComp)
+    stlRootOptions.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
+    stlRootOptions.filename = FilePath
+    exportMgr.execute(stlRootOptions)
+    ui.messageBox(f"Exported STL to: {FilePath}")
 ##################################
 # Parameter aus Fusion holen
 ##################################
@@ -132,9 +230,10 @@ class Handler(BaseHTTPRequestHandler):
         Wenn hier zugegriffen wird, stürzt Fusion ab.
         """
         try:
-            global ModelParameterSnapshot
+            global ModelParameterSnapshot, Witzenmann
             if self.path == '/count_parameters':
-                count = len(ModelParameterSnapshot)
+                count = (ModelParameterSnapshot)
+    
                 self.send_response(200)
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
@@ -198,6 +297,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"Boxstatus": "Box wurde erfolgreich erstellt mit den Werten: Höhe = {}, Breite = {}, Tiefe = {}".format(BoxHeight, BoxWidth, BoxDepth)}).encode('utf-8'))
+            
+            
+            elif self.path == '/Witzenmann':
+                global Witzenmann
+                Witzenmann = True
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"Witzenmannstatus": "Witzenmannlogo wurde erfolgreich erstellt"}).encode('utf-8'))
+                
+
             else:
                 self.send_error(404, 'Not Found')
         except Exception as e:
@@ -230,7 +340,7 @@ def polling_loop(design,ui):
     - Prüfung ob eine Box erstellt werden soll (Box ist nicht None)
     - Aktualisierung der ModelParameterSnapshot Liste
     """
-    global ModelParameterSnapshot, _stop_polling, changeParam, newParam, Box, BoxHeight, BoxWidth, BoxDepth
+    global ModelParameterSnapshot, _stop_polling, changeParam, newParam, Box, BoxHeight, BoxWidth, BoxDepth, Witzenmann
     while not _stop_polling:
         try:
             ModelParameterSnapshot = get_model_parameters(design)
@@ -240,10 +350,14 @@ def polling_loop(design,ui):
                 newParam = None
             if Box :
                 draw_Box(design,ui, BoxHeight, BoxWidth,BoxDepth)
-                Box = None
-                BoxHeight = None
-                BoxWidth = None
-                BoxDepth = None
+                #Box = None
+                #BoxHeight = None
+                #BoxWidth = None
+                #BoxDepth = None
+            if Witzenmann:
+                ui.messageBox("Witzenmann-Logo wird gezeichnet!")
+                draw_Witzenmann(design,ui)
+                Witzenmann = None
         except:
             pass
         time.sleep(_polling_interval)
