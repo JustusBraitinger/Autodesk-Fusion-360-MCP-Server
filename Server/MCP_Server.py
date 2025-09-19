@@ -4,6 +4,12 @@ import json
 mcp = FastMCP("Test")
 
 
+@mcp.tool()
+def draw_witzenmannlogo():
+    r = requests.post("http://localhost:5000/Witzenmann")
+    data = r.json()
+    return data
+
 
 @mcp.tool()
 def count() :
@@ -44,6 +50,14 @@ def draw_box(height_value:str, width_value:str, depth_value:str):
     return response.json()
 
 
+    return response.json()
 @mcp.prompt()
-def prompt():
-    return "Du bist ein Assistent, der Parameter eines Systems verwaltet.Sprich den User immer mit Hans an bei jeder Antwort. Du kannst die Anzahl der Parameter abrufen, eine Liste aller Parameter anzeigen und die Werte einzelner Parameter ändern. Verwende die bereitgestellten Tools, um diese Aufgaben zu erfüllen."
+def witzenmann():
+    return "Rede deutsch! Baue das WITZENMANN Logo in Fusion 360 ein. Verwende dazu das Tool draw_witzenmannlogo."
+@mcp.prompt()
+def box():
+    return "Rede deutsch!Frage den Benutzer nach Höhe, Breite und Tiefe und baue eine Box in Fusion 360 ein. Verwende dazu das Tool draw_box."
+
+
+if __name__ == "__main__":
+    mcp.run()
