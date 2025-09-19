@@ -39,13 +39,13 @@ If not close Claude completly with Task-Manager and reopen it.
 Click on the Plus on the bottom left of the chat.  
 
 
+Select "Add from Test"
+Click on your desired prompt
 
 
 ### TODO
-Exporting as STL currently doesnt work
-Export as STEP
+Exporting as STL currently doesnt work  
+Export as STEP  
 
-Select "Add from Test"
-Click on your desired prompt
 
  
