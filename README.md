@@ -15,6 +15,7 @@ git clone https://github.com/JustusBraitinger/FusionMCP
 cd FusionMCP
 cd Server
 pip install -r requirements.txt
+pip install "mcp[cli]"
 ```
 # Connect to Claude
 ```bash
