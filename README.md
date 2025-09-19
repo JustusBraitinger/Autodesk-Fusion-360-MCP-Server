@@ -3,7 +3,7 @@
 
 ## Setup
 
-Install Claude Desktop https://claude.ai/download
+Install Claude Desktop https://claude.ai/download  
 Install Fusion
 
 # Get Repository 
