@@ -1,6 +1,10 @@
 ### Fusion MCP Integration
 
 
+
+https://github.com/user-attachments/assets/b2256444-ed79-49fe-8141-86a6376f27c0
+
+
 ## Setup
 
 Install Claude Desktop https://claude.ai/download  
