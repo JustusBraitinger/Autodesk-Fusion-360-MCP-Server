@@ -31,6 +31,13 @@ cd ..
 To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.
 
 
+## How to use
+Open Claude and go to the developer settings. Here should be your Test MCP Server  
+If not close Claude completly with Task-Manager and reopen it.
 
- uv run mcp install MCP_Server.py 
-```
+
+Click on the Plus on the bottom left of the chat.  
+Select "Add from Test"
+Click on your desired prompt
+
+ 
