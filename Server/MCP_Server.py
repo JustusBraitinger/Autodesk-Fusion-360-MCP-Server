@@ -26,6 +26,14 @@ def list_parameters():
     return data
 
 @mcp.tool()
+def export_STL():
+    r = requests.get("http://localhost:5000/Export_STL")
+
+    data = r.json()
+    return data
+
+
+@mcp.tool()
 def change_parameter(name: str, value: str):
     url = "http://localhost:5000/set_parameter"
     data = {
@@ -56,7 +64,7 @@ def witzenmann():
     return "Rede deutsch! Baue das WITZENMANN Logo in Fusion 360 ein. Verwende dazu das Tool draw_witzenmannlogo."
 @mcp.prompt()
 def box():
-    return "Rede deutsch!Frage den Benutzer nach Höhe, Breite und Tiefe und baue eine Box in Fusion 360 ein. Verwende dazu das Tool draw_box."
+    return "Rede deutsch!Frage den Benutzer nach Höhe, Breite und Tiefe und baue eine Box in Fusion 360 ein. Verwende dazu das Tool draw_box. Frage danach den User ob er das als STL Datei exportiert haben will."
 
 
 if __name__ == "__main__":
