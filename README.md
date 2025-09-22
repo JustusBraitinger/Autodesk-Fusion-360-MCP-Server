@@ -45,6 +45,16 @@ Select "Add from Test"
 Click on your desired prompt
 
 
+
+## Available Tools
+
+- **Count_parameters** : Just counts parameters
+- **List_parametsers** : Lists all Modelparams
+- **Draw_Box** : Draws a box with given dimensions (Height,Width,Lenth)
+- **Drwa_Witzenmann** : Draws the Witzenmann logo in 3D
+- **Fillet_Edges** : Fillet edges with a given radius
+
+
 ### TODO
 Exporting as STL currently doesnt work  
 Export as STEP  
