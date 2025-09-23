@@ -60,7 +60,11 @@ Click on your desired prompt
 - **Export** : Export sketch as STEP or STL
 
 
+## Possible extensions
 
+- Make it possible to extrude, shell, revolve (Pretty hard to select the right body and side if many bodies are involved)
+- For show I could implement cameramovement after a prompt
+  
 
 # Security Considerations🔒
 
