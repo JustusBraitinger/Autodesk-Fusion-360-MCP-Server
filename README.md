@@ -61,16 +61,25 @@ Click on your desired prompt
 
 
 
-# Security Considerations 🔒
 
-## Prompt Injection / Tool Poisoning
-Prompt Injection or Tool Poisoning happens when someone deliberately manipulates an MCP tool by embedding malicious prompts into function names, descriptions, or error messages. This can cause the tool to execute unintended commands or reveal sensitive information.
+# Security Considerations🔒
 
-## Rug-Pull
-A Rug-Pull occurs when a tool or project initially appears legitimate and harmless. However, a later update from the developer can change its behavior, potentially allowing data to be accessed or files to be created without the user's consent. This issue originates from the developer, not from the protocol or platform itself.
+- **Prompt Injection / Tool Poisoning**  
+  - Someone can manipulate the MCP tool on purpose.  
+  - Malicious prompts can be put into function names, descriptions, or error messages.  
+  - This can make the tool do things it shouldn't, like reveal data.
 
-## General Note
-While the MCP protocol itself is relatively safe and does not inherently pose major security risks, the actual security of a tool depends heavily on how it is implemented and maintained. Developers must handle inputs carefully, validate all data, and implement proper access controls to prevent vulnerabilities.
+- **Rug-Pull**  
+  - The tool looks safe at first.  
+  - Later updates from the developer can change it.  
+  - It might access your data or create files without permission.  
+  - The risk comes from the developer, not the protocol.
+
+- **General Note**  
+  - The MCP protocol itself is mostly safe.  
+  - The real security depends on how the tool is built and used.  
+  - Developers should check inputs, validate data, and add access controls.
+
 
 
  
