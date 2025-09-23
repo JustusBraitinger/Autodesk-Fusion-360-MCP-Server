@@ -66,7 +66,7 @@ The MCP-Server should be visible in the developer Settings insider Claude Deskto
 Like in the video you can give Claude tasks.  
 Predetermined prompts are also available via the plus icon on the bottom left.
 
-# Security Considerations
+# Security Considerations 🔒
 
 ## Prompt Injection / Tool Poisoning
 Prompt Injection or Tool Poisoning happens when someone deliberately manipulates an MCP tool by embedding malicious prompts into function names, descriptions, or error messages. This can cause the tool to execute unintended commands or reveal sensitive information.
