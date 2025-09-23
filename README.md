@@ -50,14 +50,22 @@ Click on your desired prompt
 
 - **Count_parameters** : Just counts parameters
 - **List_parametsers** : Lists all Modelparams
-- **Draw_Box** : Draws a box with given dimensions (Height,Width,Lenth)
-- **Drwa_Witzenmann** : Draws the Witzenmann logo in 3D
+- **Draw_Box** : Draws a box with given dimensions (Height,Width,Lenth,x,y) => Only in XY currently
+- **Draw_Witzenmann** : Draws the Witzenmann logo in 3D
+- **Draw_Cylinder** : Draws a cylinder with given dimenstions, also only in XY currently
 - **Fillet_Edges** : Fillet edges with a given radius
+- **Export** : Export sketch as STEP or STL
 
 
-### TODO
-Exporting as STL currently doesnt work  
-Export as STEP  
+## Claude Usage
+After you run  
+```bash
+uv run mcp install MCP_Server.py
+```
+The MCP-Server should be visible in the developer Settings insider Claude Desktop  
+Like in the video you can give Claude tasks.  
+Predetermined prompts are also available via the plus icon on the bottom left.
+
 
 
  
