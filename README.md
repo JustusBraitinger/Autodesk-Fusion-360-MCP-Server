@@ -79,6 +79,13 @@ Click on your desired prompt
   - The MCP protocol itself is mostly safe.  
   - The real security depends on how the tool is built and used.  
   - Developers should check inputs, validate data, and add access controls.
+ 
+
+# Security Considerations in this Project
+  - This project runs locally on your machine.
+  - Currently, it uses plain HTTP for communication. This is fine for local use, but HTTP is unencrypted and could be insecure if exposed to a network.
+  - Switching to HTTPS would make communication more secure and follow best practices.
+  - Only trusted scripts and inputs should be used to avoid potential issues.
 
 
 
