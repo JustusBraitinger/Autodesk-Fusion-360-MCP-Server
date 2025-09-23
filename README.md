@@ -33,20 +33,23 @@ uv run mcp install MCP_Server.py
 To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.
 
 
-## How to use
-Open Claude and go to the developer settings. Here should be your Test MCP Server  
-If not close Claude completly with Task-Manager and reopen it.
 
-
+## Claude Usage
+After you run  
+```bash
+uv run mcp install MCP_Server.py
+```
+The MCP-Server should be visible in the developer Settings insider Claude Desktop    
+If not close Claude completly with Task-Manager and reopen it.   
+Like in the video you can give Claude tasks.   
 Click on the Plus on the bottom left of the chat.  
-
-
-Select "Add from Test"
+Select "Add from Fusion"
 Click on your desired prompt
 
 
 
-## Available Tools
+
+## Available Tools 🧰
 
 - **Count_parameters** : Just counts parameters
 - **List_parametsers** : Lists all Modelparams
@@ -57,14 +60,6 @@ Click on your desired prompt
 - **Export** : Export sketch as STEP or STL
 
 
-## Claude Usage
-After you run  
-```bash
-uv run mcp install MCP_Server.py
-```
-The MCP-Server should be visible in the developer Settings insider Claude Desktop  
-Like in the video you can give Claude tasks.  
-Predetermined prompts are also available via the plus icon on the bottom left.
 
 # Security Considerations 🔒
 
