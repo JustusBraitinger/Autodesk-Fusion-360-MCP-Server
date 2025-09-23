@@ -1,5 +1,6 @@
 import adsk.core, adsk.fusion, traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from http import HTTPStatus
 import threading
 import json
 import time
@@ -14,23 +15,98 @@ _polling_interval = 0.1  # Sekunden
 _stop_polling = False
 task_queue = queue.Queue()  # Queue für thread-safe Aktionen
 
-# Box-Defaults
-BoxHeight = 5
-BoxWidth = 5
-BoxDepth = 5
+ 
 
-# ##################################
-# Fusion-Operationen (Main-Thread)
-# ##################################
-def draw_Box(design, ui, height, width, depth):
+
+
+
+def export_as_STEP(design, ui, FilePath):
+    try:
+        exportMgr = design.exportManager
+        # Absoluter Pfad, r"" für Backslashes
+        stepOptions = exportMgr.createSTEPExportOptions(r"C:\Users\justu\Desktop\FusioSTL\Fusion.step")
+        res = exportMgr.execute(stepOptions)
+        if res:
+            ui.messageBox(f"Exported STEP to: {FilePath}")
+        else:
+            ui.messageBox("STEP export failed")
+    except:
+        if ui:
+            ui.messageBox('Failed export_as_STEP:\n{}'.format(traceback.format_exc()))
+
+
+
+def fillet_edges(design, ui, radius=0.3):
+    try:
+        rootComp = design.rootComponent
+
+        bodies = rootComp.bRepBodies
+
+        edgeCollection = adsk.core.ObjectCollection.create()
+        for body_idx in range(bodies.count):
+            body = bodies.item(body_idx)
+            for edge_idx in range(body.edges.count):
+                edge = body.edges.item(edge_idx)
+                edgeCollection.add(edge)
+
+        fillets = rootComp.features.filletFeatures
+        radiusInput = adsk.core.ValueInput.createByReal(radius)
+        filletInput = fillets.createInput()
+        filletInput.isRollingBallCorner = True
+        edgeSetInput = filletInput.edgeSetInputs.addConstantRadiusEdgeSet(edgeCollection, radiusInput, True)
+        edgeSetInput.continuity = adsk.fusion.SurfaceContinuityTypes.TangentSurfaceContinuityType
+        fillets.add(filletInput)
+        ui.messageBox('Failasdasdasdasdasded:\n{}'.format(traceback.format_exc()))
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+def draw_cylinder(design, ui, radius, height, x,y):
+    """
+    Draws a cylinder with given radius and height at position (x,y)
+    """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
         xyPlane = rootComp.xYConstructionPlane
         sketch = sketches.add(xyPlane)
+
+        center = adsk.core.Point3D.create(x, y, 0)
+        sketch.sketchCurves.sketchCircles.addByCenterRadius(center, radius)
+
+        prof = sketch.profiles.item(0)
+        extrudes = rootComp.features.extrudeFeatures
+        extInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        distance = adsk.core.ValueInput.createByReal(height)
+        extInput.setDistanceExtent(False, distance)
+        extrudes.add(extInput)
+
+    except:
+        if ui:
+            ui.messageBox('Failed draw_cylinder:\n{}'.format(traceback.format_exc()))
+
+def draw_Box(design, ui, height, width, depth,x,y, plane=None):
+    """
+    Draws Box with given dimensions height, width, depth
+    
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        xyPlane = rootComp.xYConstructionPlane
+        xZPlane = rootComp.xZConstructionPlane
+        yZPlane = rootComp.yZConstructionPlane
+        if plane == 'XZ':
+            sketch = sketches.add(xZPlane)
+        elif plane == 'YZ':
+            sketch = sketches.add(yZPlane)
+        else:
+            sketch = sketches.add(xyPlane)
         lines = sketch.sketchCurves.sketchLines
         lines.addCenterPointRectangle(
-            adsk.core.Point3D.create(0,0,0),
+            adsk.core.Point3D.create(x, y, 0),
             adsk.core.Point3D.create(width/2, height/2, 0)
         )
         prof = sketch.profiles.item(0)
@@ -121,6 +197,7 @@ def set_parameter(design, ui, name, value):
         if ui:
             ui.messageBox('Failed set_parameter:\n{}'.format(traceback.format_exc()))
 
+
 # ##################################
 # HTTP Server
 # ##################################
@@ -165,7 +242,11 @@ class Handler(BaseHTTPRequestHandler):
                 height = float(data.get('height',5))
                 width = float(data.get('width',5))
                 depth = float(data.get('depth',5))
-                task_queue.put(('draw_box', height, width, depth))
+                x = float(data.get('x',0))
+                y = float(data.get('y',0))
+                Plane = data.get('plane',None)  # 'XY', 'XZ', 'YZ' or None
+
+                task_queue.put(('draw_box', height, width, depth,x,y, Plane))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -185,6 +266,33 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "STL Export gestartet"}).encode('utf-8'))
 
+
+            elif path == '/Export_STEP':
+                task_queue.put(('export_step', r"C:\Users\justu\Desktop\FusioSTL\Test.step"))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "STEP Export gestartet"}).encode('utf-8'))
+
+
+            elif path == '/fillet_edges':
+                radius = float(data.get('radius',0.3)) #0.3 as default
+                task_queue.put(('fillet_edges',radius))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Fillet edges started"}).encode('utf-8'))
+
+            elif path == '/draw_cylinder':
+                radius = float(data.get('radius',5))
+                height = float(data.get('height',10))
+                x = float(data.get('x',0))
+                y = float(data.get('y',0))
+                task_queue.put(('draw_cylinder', radius, height, x, y))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Cylinder wird erstellt"}).encode('utf-8'))
             else:
                 self.send_error(404,'Not Found')
 
@@ -206,18 +314,26 @@ def polling_loop(design, ui):
         try:
             # Parameter Snapshot
             ModelParameterSnapshot = get_model_parameters(design)
-
+            
             # Task-Queue abarbeiten
             while not task_queue.empty():
                 task = task_queue.get()
                 if task[0] == 'set_parameter':
                     set_parameter(design, ui, task[1], task[2])
                 elif task[0] == 'draw_box':
-                    draw_Box(design, ui, task[1], task[2], task[3])
+                    draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5])
                 elif task[0] == 'draw_witzenmann':
                     draw_Witzenmann(design, ui)
                 elif task[0] == 'export_stl':
-                    export_as_STL(design, ui, task[1])
+                    FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
+                    export_as_STL(design, ui, FilePath)
+                elif task[0] == 'fillet_edges':
+                    fillet_edges(design, ui,task[1])
+                elif task[0] == 'export_step':
+                    FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
+                    export_as_STEP(design, ui, FilePath)
+                elif task[0] == 'draw_cylinder':
+                    draw_cylinder(design, ui, task[1], task[2], task[3], task[4])
         except:
             pass
         time.sleep(_polling_interval)
@@ -261,7 +377,10 @@ def stop(context):
   
     while not task_queue.empty():
         try:
-            task_queue.get_nowait()
+            task_queue.get_nowait() 
+            if task_queue.empty():
+                break
+            
         except:
             break
 
@@ -274,10 +393,9 @@ def stop(context):
             pass
         httpd = None
 
-    # Kurze Pause, damit Threads sauber stoppen
-    time.sleep(0.2)
+    
 
-    # Hinweis: Nach dem Stop keine Fusion API-Aufrufe mehr!
+   
     try:
         app = adsk.core.Application.get()
         if app:
