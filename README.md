@@ -1,6 +1,20 @@
 ### Fusion MCP Integration
 
 
+## Motivation
+
+The motivation behind this project is to visualize the potential of the MCP protocol when it is used with Autodesk Fusion.  
+It demonstrates how MCP can serve as a bridge between AI-driven tools and Fusion's modeling environment, enabling 
+automated geometry generation, parameter control, and interactive workflows.
+
+
+
+
+
+
+
+
+
 
 https://github.com/user-attachments/assets/b2256444-ed79-49fe-8141-86a6376f27c0
 
@@ -92,5 +106,15 @@ Click on your desired prompt
   - Only trusted scripts and inputs should be used to avoid potential issues.
 
 
+
+
+### Disclaimer
+
+The current Fusion 360 API has several limitations when used with modern MCP operations:  
+- It is relatively old and **not built for MCP-style workflows**.  
+- The API is **not thread-safe**, which can lead to stability issues in asynchronous or parallel tasks.  
+- The official documentation is limited and sometimes outdated, which makes development more challenging.  
+
+This project is therefore an experimental prototype to explore what is possible, rather than a production-ready solution.
 
  
