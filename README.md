@@ -1,4 +1,4 @@
-### Fusion MCP Integration
+# Fusion MCP Integration
 
 
 ## Motivation
