@@ -44,7 +44,8 @@ uv run mcp install MCP_Server.py
 
 ## Add Addin to Fusion
 
-To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.
+To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.  
+The InsatllAddin.py file currently does **not** work
 
 
 
