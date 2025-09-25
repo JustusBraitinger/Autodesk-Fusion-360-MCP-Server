@@ -11,6 +11,7 @@ def draw_witzenmannlogo():
     return data
 
 
+
 @mcp.tool()
 def count() :
     r = requests.get("http://localhost:5000/count_parameters")
@@ -93,6 +94,25 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
 
     return response.json()
 
+@mcp.tool()
+def shell_body(thickness: float, faceindex: int):
+    """
+
+
+    Du kannst die Dicke der Wand als Float übergeben
+    Du kannst den Faceindex als Integer übergeben
+
+    :param thickness:
+    :param faceindex:
+    :return:
+    """
+    url = "http://localhost:5000/shell_body"
+    data = {
+        "thickness": thickness,
+        "faceindex": faceindex
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
 
     return response.json()
 @mcp.prompt()
