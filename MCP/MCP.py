@@ -17,7 +17,34 @@ task_queue = queue.Queue()  # Queue für thread-safe Aktionen
 
  
 
+def shell_existing_body(design, ui, thickness=0.5, faceindex=0):
+    """
+    Shells the body on a specified face index with given thickness
+    """
+    try:
+        rootComp = design.rootComponent
+        features = rootComp.features
+        
+        body = rootComp.bRepBodies.item(0)
 
+        entities = adsk.core.ObjectCollection.create()
+        entities.add(body.faces.item(faceindex))
+
+        shellFeats = features.shellFeatures
+        isTangentChain = False
+        shellInput = shellFeats.createInput(entities, isTangentChain)
+
+        thicknessVal = adsk.core.ValueInput.createByReal(thickness)
+        shellInput.insideThickness = thicknessVal
+
+        shellInput.shellType = adsk.fusion.ShellTypes.SharpOffsetShellType
+
+        # Ausführen
+        shellFeats.add(shellInput)
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 def export_as_STEP(design, ui, FilePath):
@@ -293,6 +320,17 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Cylinder wird erstellt"}).encode('utf-8'))
+            
+
+            elif path == '/shell_body':
+                thickness = float(data.get('thickness',0.5)) #0.5 as default
+                faceindex = int(data.get('faceindex',0))
+                task_queue.put(('shell_body', thickness, faceindex))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Shell body wird erstellt"}).encode('utf-8'))
+
             else:
                 self.send_error(404,'Not Found')
 
@@ -334,6 +372,8 @@ def polling_loop(design, ui):
                     export_as_STEP(design, ui, FilePath)
                 elif task[0] == 'draw_cylinder':
                     draw_cylinder(design, ui, task[1], task[2], task[3], task[4])
+                elif task[0] == 'shell_body':
+                    shell_existing_body(design, ui, task[1], task[2])
         except:
             pass
         time.sleep(_polling_interval)
