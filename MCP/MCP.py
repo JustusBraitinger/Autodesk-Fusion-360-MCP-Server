@@ -15,7 +15,18 @@ _polling_interval = 0.1  # Sekunden
 _stop_polling = False
 task_queue = queue.Queue()  # Queue für thread-safe Aktionen
 
- 
+def undo(design, ui):
+    try:
+        app = adsk.core.Application.get()
+        ui  = app.userInterface
+        
+        cmd = ui.commandDefinitions.itemById('UndoCommand')
+        cmd.execute()
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
 
 def shell_existing_body(design, ui, thickness=0.5, faceindex=0):
     """
@@ -242,6 +253,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
+           
             else:
                 self.send_error(404,'Not Found')
         except Exception as e:
@@ -264,6 +276,13 @@ class Handler(BaseHTTPRequestHandler):
                     self.send_header('Content-type','application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({"message": f"Parameter {name} wird gesetzt"}).encode('utf-8'))
+
+            elif path == '/undo':
+                task_queue.put(('undo',))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Undo wird ausgeführt"}).encode('utf-8'))
 
             elif path == '/Box':
                 height = float(data.get('height',5))
@@ -373,7 +392,9 @@ def polling_loop(design, ui):
                 elif task[0] == 'draw_cylinder':
                     draw_cylinder(design, ui, task[1], task[2], task[3], task[4])
                 elif task[0] == 'shell_body':
-                    shell_existing_body(design, ui, task[1], task[2])
+                    shell_existing_body(design, ui, task[1], task[2]),
+                elif task[0] == 'undo':
+                    undo(design, ui)
         except:
             pass
         time.sleep(_polling_interval)
