@@ -73,6 +73,7 @@ Click on your desired prompt
 - **Draw_Cylinder** : Draws a cylinder with given dimenstions, also only in XY currently
 - **Fillet_Edges** : Fillet edges with a given radius
 - **Export** : Export sketch as STEP or STL
+- **Shell body** : Shells a body with given thickness and face index
 
 
 ## Possible extensions
