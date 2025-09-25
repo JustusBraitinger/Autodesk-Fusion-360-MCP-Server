@@ -10,7 +10,13 @@ def draw_witzenmannlogo():
     data = r.json()
     return data
 
+@mcp.tool()
+def undo():
+    r = requests.post("http://localhost:5000/undo")
 
+    data = r.json()
+
+    return data
 
 @mcp.tool()
 def count() :
@@ -124,6 +130,12 @@ def box():
 @mcp.prompt()
 def fillet():
     return "Rede deutsch! Frage den Benutzer nach dem Radius und verrunde alle Kanten der Box in Fusion 360. Verwende dazu das Tool fillet_edges."
+
+@mcp.prompt()
+def summary():
+    return "Du bist ein hilfreicher Assistent für Fusion 360. Liste jeden Parameter auf den du hast und sag was du kannst!"
+
+
 
 if __name__ == "__main__":
     mcp.run()
