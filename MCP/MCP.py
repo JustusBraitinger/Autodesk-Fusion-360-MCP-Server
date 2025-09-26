@@ -101,9 +101,9 @@ def fillet_edges(design, ui, radius=0.3):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-def draw_cylinder(design, ui, radius, height, x,y):
+def draw_cylinder(design, ui, radius, height, x,y,z):
     """
-    Draws a cylinder with given radius and height at position (x,y)
+    Draws a cylinder with given radius and height at position (x,y,z)
     """
     try:
         rootComp = design.rootComponent
@@ -111,7 +111,7 @@ def draw_cylinder(design, ui, radius, height, x,y):
         xyPlane = rootComp.xYConstructionPlane
         sketch = sketches.add(xyPlane)
 
-        center = adsk.core.Point3D.create(x, y, 0)
+        center = adsk.core.Point3D.create(x, y, z)
         sketch.sketchCurves.sketchCircles.addByCenterRadius(center, radius)
 
         prof = sketch.profiles.item(0)
@@ -330,11 +330,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"message": "Fillet edges started"}).encode('utf-8'))
 
             elif path == '/draw_cylinder':
-                radius = float(data.get('radius',5))
-                height = float(data.get('height',10))
+                radius = float(data.get('radius'))
+                height = float(data.get('height'))
                 x = float(data.get('x',0))
                 y = float(data.get('y',0))
-                task_queue.put(('draw_cylinder', radius, height, x, y))
+                z = float(data.get('z',0))
+                task_queue.put(('draw_cylinder', radius, height, x, y,z))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -390,7 +391,7 @@ def polling_loop(design, ui):
                     FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
                     export_as_STEP(design, ui, FilePath)
                 elif task[0] == 'draw_cylinder':
-                    draw_cylinder(design, ui, task[1], task[2], task[3], task[4])
+                    draw_cylinder(design, ui, task[1], task[2], task[3], task[4],task[5])
                 elif task[0] == 'shell_body':
                     shell_existing_body(design, ui, task[1], task[2]),
                 elif task[0] == 'undo':
@@ -431,19 +432,22 @@ def run(context):
         except:
             pass
 
+
+
+
 def stop(context):
     global _stop_polling, httpd, task_queue
     _stop_polling = True
 
   
-    while not task_queue.empty():
-        try:
-            task_queue.get_nowait() 
-            if task_queue.empty():
-                break
+    # while not task_queue.empty():
+    #     try:
+    #         task_queue.get_nowait() 
+    #         if task_queue.empty(): 
+    #             break
             
-        except:
-            break
+    #     except:
+    #         break
 
   
     if httpd:
