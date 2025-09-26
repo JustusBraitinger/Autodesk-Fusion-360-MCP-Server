@@ -63,20 +63,21 @@ def change_parameter(name: str, value: str):
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 @mcp.tool()
-def draw_cylinder(radius: float = 5.0, height: float = 10.0, x: float = 0.0, y: float = 0.0):
+def draw_cylinder(radius: float , height: float , x: float, y: float , z: float  ):
     """
-    Zeichne ienen Zylinder, du kannst du in der XY Ebende arbeiten
+    Zeichne einen Zylinder, du kannst du in der XY Ebende arbeiten
     Es gibt Standartwerte
     """
-    r = requests.post("http://localhost:5000/draw_cylinder")
+    url ="http://localhost:5000/draw_cylinder"
     data = {
         "radius": radius,
         "height": height,
         "x": x,
-        "y": y
-
-
+        "y": y,
+        "z": z
     }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    data = response.json()
     return data
 @mcp.tool()
 def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, y_value:float):
