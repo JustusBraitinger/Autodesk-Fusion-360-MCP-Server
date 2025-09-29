@@ -74,6 +74,7 @@ Click on your desired prompt
 - **Fillet_Edges** : Fillet edges with a given radius
 - **Export** : Export sketch as STEP or STL
 - **Shell body** : Shells a body with given thickness and face index
+- **Undo Command** : Undos last change
 
 
 
