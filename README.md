@@ -125,8 +125,12 @@ threading.Thread(target=lambda: polling_loop(design, ui), daemon=True).start()
 
 ### Polling loop :
 
-
-
+The polling loop checks the task queue and executes tasks in the main thread.  
+```python
+task = task_queue.get()
+if task[0] == 'set_parameter':
+  set_parameter(design, ui, task[1], task[2])
+```
 
 
 
