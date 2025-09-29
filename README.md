@@ -125,6 +125,10 @@ if task[0] == 'set_parameter':
 ```
 
 
+I chose this architecture as PoC but a websocket approach would probably be better.   
+It is extremly important that you never call Fusion API outside of the main thread!  
+
+
 
 
 
