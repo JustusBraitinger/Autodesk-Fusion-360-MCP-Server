@@ -82,6 +82,58 @@ Click on your desired prompt
 - For show I could implement cameramovement after a prompt
   
 
+
+
+
+# Architecture
+
+## Server.py
+
+In this file we initialize the FastMCP Server and define tools and prompts.  
+For example in the following tool we call the HTTP-Endpoint for counting every existing parameter in the current project.
+
+```python
+@mcp.tool()
+def count() :
+    r = requests.get("http://localhost:5000/count_parameters")
+    data = r.json()
+```
+
+There are also predetermined prompts which you can define by @mcp.prompt(). In the following example it gives instructions how to interact with the user, if asked for a box.
+```python
+@mcp.prompt()
+def box():
+    return "Rede deutsch!Frage den Benutzer nach Höhe, Breite und Tiefe und baue eine Box in Fusion 360 ein. Verwende dazu das Tool draw_box. Frage danach den User ob er das als STL Datei exportiert haben will."
+```
+
+## MCP.py
+
+This is the main addin.  
+Because the Fusion API is not threadsafe we need to start two external threads:  
+
+In the first one we start a thread for out HTTP-Server, with which one we are able to communicate with the MCP-Server (A websocket approach would maybe be better and more stable)
+
+```python
+# start HTTP-Server
+threading.Thread(target=run_server, daemon=True).start()
+```
+
+In the second one we start the polling loop thread:
+```python
+threading.Thread(target=lambda: polling_loop(design, ui), daemon=True).start()
+```
+
+### Polling loop :
+
+
+
+
+
+
+
+
+
+
 # Security Considerations🔒
 
 - **Prompt Injection / Tool Poisoning**  
@@ -106,9 +158,6 @@ Click on your desired prompt
   - Currently, it uses plain HTTP for communication. This is fine for local use, but HTTP is unencrypted and could be insecure if exposed to a network.
   - Switching to HTTPS would make communication more secure and follow best practices.
   - Only trusted scripts and inputs should be used to avoid potential issues.
-
-
-
 
 # Disclaimer
 
