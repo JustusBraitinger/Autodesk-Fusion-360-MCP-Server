@@ -76,14 +76,6 @@ Click on your desired prompt
 - **Shell body** : Shells a body with given thickness and face index
 
 
-## Possible extensions
-
-- Make it possible to extrude, shell, revolve (Pretty hard to select the right body and side if many bodies are involved)
-- For show I could implement cameramovement after a prompt
-  
-
-
-
 
 # Architecture
 
@@ -163,6 +155,14 @@ if task[0] == 'set_parameter':
   - Switching to HTTPS would make communication more secure and follow best practices.
   - Only trusted scripts and inputs should be used to avoid potential issues.
 
+
+
+
+## Possible extensions
+
+- Make it possible to extrude, shell, revolve (Pretty hard to select the right body and side if many bodies are involved)
+- For show I could implement cameramovement after a prompt
+  
 # Disclaimer
 
 The current Fusion 360 API has several limitations when used with modern MCP operations:  
