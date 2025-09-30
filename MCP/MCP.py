@@ -158,6 +158,9 @@ def draw_Box(design, ui, height, width, depth,x,y, plane=None):
             ui.messageBox('Failed draw_Box:\n{}'.format(traceback.format_exc()))
 
 def draw_Witzenmann(design, ui):
+    """
+    Hardcoded because becuase
+    """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
@@ -469,3 +472,4 @@ def stop(context):
                 ui.messageBox("Fusion HTTP Add-In gestoppt")
     except:
         pass
+
