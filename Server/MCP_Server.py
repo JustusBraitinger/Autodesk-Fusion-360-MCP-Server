@@ -80,7 +80,7 @@ def draw_cylinder(radius: float , height: float , x: float, y: float , z: float 
     data = response.json()
     return data
 @mcp.tool()
-def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, y_value:float):
+def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, y_value:float, plane:str="XY"):
     """
     Du kannst die Höhe, Breite und Tiefe der Box als Strings übergeben.
     Du kannst die Koordinaten x, y der Box als Strings übergeben.Gib immer Koordinaten an
@@ -94,6 +94,7 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
         "depth": depth_value,
         "x" : x_value,
         "y" : y_value,
+        "Plane": plane
 
     }
 
@@ -121,7 +122,33 @@ def shell_body(thickness: float, faceindex: int):
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 
+
+@mcp.tool()
+def draw_lines(points : list, plane : str):
+    """
+    Zeichne Linien in Fusion 360
+    Du kannst die Punkte als Liste von Listen übergeben
+    Beispiel: [[0,0],[5,0],[5,5],[0,5]]
+    Du kannst die Ebene als String übergeben
+    Beispiel: "XY", "YZ", "XZ"
+    """
+    url = "http://localhost:5000/draw_lines"
+    data = {
+        "points": points,
+        "plane": plane
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
+
+@mcp.tool()
+def extrude(value : float):
+    url = "http://localhost:5000/extrude_last_sketch"
+    data = {
+        "value": value
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
+
 @mcp.prompt()
 def witzenmann():
     return "Rede deutsch! Baue das WITZENMANN Logo in Fusion 360 ein. Verwende dazu das Tool draw_witzenmannlogo."
