@@ -5,15 +5,160 @@ import threading
 import json
 import time
 import queue
-
+from pathlib import Path
 # ##################################
 # Globale Variablen
 # ##################################
 ModelParameterSnapshot = []
 httpd = None
-_polling_interval = 0.1  # Sekunden
-_stop_polling = False
 task_queue = queue.Queue()  # Queue für thread-safe Aktionen
+
+# Event Handler Variablen
+app = None
+ui = None
+design = None
+handlers = []
+stopFlag = None
+myCustomEvent = 'MCPTaskEvent'
+customEvent = None
+
+# ##################################
+# Event Handler Klassen
+# ##################################
+class TaskEventHandler(adsk.core.CustomEventHandler):
+    """
+    Custom Event Handler for processing tasks from the queue
+    """
+    def __init__(self):
+        super().__init__()
+        
+    def notify(self, args):
+        global task_queue, ModelParameterSnapshot, design, ui
+        try:
+            if design:
+                # Parameter Snapshot aktualisieren
+                ModelParameterSnapshot = get_model_parameters(design)
+                
+                # Task-Queue abarbeiten
+                while not task_queue.empty():
+                    try:
+                        task = task_queue.get_nowait()
+                        self.process_task(task)
+                    except queue.Empty:
+                        break
+                    except Exception as e:
+                        if ui:
+                            ui.messageBox(f"Task-Fehler: {str(e)}")
+                        continue
+                        
+        except Exception as e:
+
+            pass
+    
+    def process_task(self, task):
+        """Verarbeitet eine einzelne Task"""
+        global design, ui
+        
+        if task[0] == 'set_parameter':
+            set_parameter(design, ui, task[1], task[2])
+        elif task[0] == 'draw_box':
+            if len(task) >= 7:
+                draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], task[6])
+            else:
+                draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], None)
+        elif task[0] == 'draw_witzenmann':
+            draw_Witzenmann(design, ui)
+        elif task[0] == 'export_stl':
+            FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
+            export_as_STL(design, ui, FilePath)
+        elif task[0] == 'fillet_edges':
+            fillet_edges(design, ui, task[1])
+        elif task[0] == 'export_step':
+            FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
+            export_as_STEP(design, ui, FilePath)
+        elif task[0] == 'draw_cylinder':
+            draw_cylinder(design, ui, task[1], task[2], task[3], task[4], task[5])
+        elif task[0] == 'shell_body':
+            shell_existing_body(design, ui, task[1], task[2])
+        elif task[0] == 'undo':
+            undo(design, ui)
+        elif task[0] == 'draw_lines':
+            draw_lines(design, ui, task[1], task[2])
+        elif task[0] == 'extrude_last_sketch':
+            extrude_last_sketch(design, ui, task[1])
+
+# ##################################
+# Thread für regelmäßige Task-Verarbeitung
+# ##################################
+class TaskThread(threading.Thread):
+    def __init__(self, event):
+        threading.Thread.__init__(self)
+        self.stopped = event
+
+    def run(self):
+        # Alle 200ms Custom Event feuern für Task-Verarbeitung
+        while not self.stopped.wait(0.2):
+            try:
+                app.fireCustomEvent(myCustomEvent, json.dumps({}))
+            except:
+                break
+
+
+
+
+def draw_lines(design,ui, points,Plane = "XY"):
+    """
+    User input: points = [(x1,y1), (x2,y2), ...]
+    Plane: "XY", "XZ", "YZ"
+    Draws lines between the given points on the specified plane
+    Connects the last point to the first point to close the shape
+    """
+    try:
+        rootComp = design.rootComponent #Holen der Rotkomponente
+        sketches = rootComp.sketches
+        if Plane == "XY":
+            xyPlane = rootComp.xYConstructionPlane 
+            sketch = sketches.add(xyPlane)
+        elif Plane == "XZ":
+            xZPlane = rootComp.xZConstructionPlane
+            sketch = sketches.add(xZPlane)
+        elif Plane == "YZ":
+            yZPlane = rootComp.yZConstructionPlane
+            sketch = sketches.add(yZPlane)
+        for i in range(len(points)-1):
+            start = adsk.core.Point3D.create(points[i][0], points[i][1], 0)
+            end   = adsk.core.Point3D.create(points[i+1][0], points[i+1][1], 0)
+            sketch.sketchCurves.sketchLines.addByTwoPoints(start, end)
+        sketch.sketchCurves.sketchLines.addByTwoPoints(
+            adsk.core.Point3D.create(points[-1][0],points[-1][1],0),
+            adsk.core.Point3D.create(points[0][0],points[0][1],0) #
+        ) # Verbindet den ersten und letzten Punkt
+
+    except:
+        if ui :
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+
+def extrude_last_sketch(design, ui, value):
+    """
+    Just extrudes the last sketch by the given value
+    """
+    try:
+        rootComp = design.rootComponent 
+        sketches = rootComp.sketches
+        sketch = sketches.item(sketches.count - 1)  # Letzter Sketch
+        prof = sketch.profiles.item(0)  # Erstes Profil im Sketch
+        extrudes = rootComp.features.extrudeFeatures
+        extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        distance = adsk.core.ValueInput.createByReal(value)
+        extrudeInput.setDistanceExtent(False, distance)
+        extrudes.add(extrudeInput)
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
 
 def undo(design, ui):
     try:
@@ -62,7 +207,13 @@ def export_as_STEP(design, ui, FilePath):
     try:
         exportMgr = design.exportManager
         # Absoluter Pfad, r"" für Backslashes
-        stepOptions = exportMgr.createSTEPExportOptions(r"C:\Users\justu\Desktop\FusioSTL\Fusion.step")
+        if not FilePath:
+            desktop = Path.home() / "Desktop"
+            directories = desktop / "FusionExports"
+            directories.mkdir(parents=True, exist_ok=True)
+            stepOptions = exportMgr.createSTEPExportOptions(str(directories / "Fusion.step"))
+        else:
+            stepOptions = exportMgr.createSTEPExportOptions(FilePath)
         res = exportMgr.execute(stepOptions)
         if res:
             ui.messageBox(f"Exported STEP to: {FilePath}")
@@ -137,9 +288,9 @@ def draw_Box(design, ui, height, width, depth,x,y, plane=None):
         xZPlane = rootComp.xZConstructionPlane
         yZPlane = rootComp.yZConstructionPlane
         if plane == 'XZ':
-            sketch = sketches.add(xZPlane)
+            sketch = sketches.add(rootComp.xZConstructionPlane)
         elif plane == 'YZ':
-            sketch = sketches.add(yZPlane)
+            sketch = sketches.add(rootComp.yZConstructionPlane)
         else:
             sketch = sketches.add(xyPlane)
         lines = sketch.sketchCurves.sketchLines
@@ -158,9 +309,6 @@ def draw_Box(design, ui, height, width, depth,x,y, plane=None):
             ui.messageBox('Failed draw_Box:\n{}'.format(traceback.format_exc()))
 
 def draw_Witzenmann(design, ui):
-    """
-    Hardcoded because becuase
-    """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
@@ -176,10 +324,10 @@ def draw_Witzenmann(design, ui):
         for i in range(len(points1)-1):
             start = adsk.core.Point3D.create(points1[i][0], points1[i][1],0)
             end   = adsk.core.Point3D.create(points1[i+1][0], points1[i+1][1],0)
-            sketch.sketchCurves.sketchLines.addByTwoPoints(start,end)
+            sketch.sketchCurves.sketchLines.addByTwoPoints(start,end) # Verbindungslinie zeichnen
         sketch.sketchCurves.sketchLines.addByTwoPoints(
             adsk.core.Point3D.create(points1[-1][0],points1[-1][1],0),
-            adsk.core.Point3D.create(points1[0][0],points1[0][1],0)
+            adsk.core.Point3D.create(points1[0][0],points1[0][1],0) #
         )
 
         points2 = [(-3.391,-5.989),(5.062,-10.141),(-8.859,-10.141),(-8.859,-5.989)]
@@ -354,6 +502,23 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Shell body wird erstellt"}).encode('utf-8'))
 
+            elif path == '/draw_lines':
+                points = data.get('points', [])
+                Plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('draw_lines', points, Plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Lines werden erstellt"}).encode('utf-8'))
+            
+            elif path == '/extrude_last_sketch':
+                value = float(data.get('value',1.0)) #1.0 as default
+                task_queue.put(('extrude_last_sketch', value))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Letzter Sketch wird extrudiert"}).encode('utf-8'))
+
             else:
                 self.send_error(404,'Not Found')
 
@@ -369,45 +534,13 @@ def run_server():
 # ##################################
 # Polling-Loop im Main-Thread
 # ##################################
-def polling_loop(design, ui):
-    global _stop_polling, ModelParameterSnapshot
-    while not _stop_polling:
-        try:
-            # Parameter Snapshot
-            ModelParameterSnapshot = get_model_parameters(design)
-            
-            # Task-Queue abarbeiten
-            while not task_queue.empty():
-                task = task_queue.get()
-                if task[0] == 'set_parameter':
-                    set_parameter(design, ui, task[1], task[2])
-                elif task[0] == 'draw_box':
-                    draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5])
-                elif task[0] == 'draw_witzenmann':
-                    draw_Witzenmann(design, ui)
-                elif task[0] == 'export_stl':
-                    FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
-                    export_as_STL(design, ui, FilePath)
-                elif task[0] == 'fillet_edges':
-                    fillet_edges(design, ui,task[1])
-                elif task[0] == 'export_step':
-                    FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
-                    export_as_STEP(design, ui, FilePath)
-                elif task[0] == 'draw_cylinder':
-                    draw_cylinder(design, ui, task[1], task[2], task[3], task[4],task[5])
-                elif task[0] == 'shell_body':
-                    shell_existing_body(design, ui, task[1], task[2]),
-                elif task[0] == 'undo':
-                    undo(design, ui)
-        except:
-            pass
-        time.sleep(_polling_interval)
+# Removed polling_loop - replaced with event-driven approach
 
 # ##################################
 # Add-In Event Handler
 # ##################################
 def run(context):
-    global _stop_polling
+    global app, ui, design, handlers, stopFlag, customEvent
     try:
         app = adsk.core.Application.get()
         ui = app.userInterface
@@ -421,13 +554,22 @@ def run(context):
         global ModelParameterSnapshot
         ModelParameterSnapshot = get_model_parameters(design)
 
+        # Custom Event registrieren
+        customEvent = app.registerCustomEvent(myCustomEvent)
+        onTaskEvent = TaskEventHandler()
+        customEvent.add(onTaskEvent)
+        handlers.append(onTaskEvent)
+
+        # Task Thread starten
+        stopFlag = threading.Event()
+        taskThread = TaskThread(stopFlag)
+        taskThread.daemon = True
+        taskThread.start()
+
         ui.messageBox(f"Fusion HTTP Add-In gestartet! Port 5000.\nParameter geladen: {len(ModelParameterSnapshot)} Modellparameter")
 
         # HTTP-Server starten
         threading.Thread(target=run_server, daemon=True).start()
-
-        # Polling-Loop starten
-        threading.Thread(target=lambda: polling_loop(design, ui), daemon=True).start()
 
     except:
         try:
@@ -439,18 +581,37 @@ def run(context):
 
 
 def stop(context):
-    global _stop_polling, httpd, task_queue
-    _stop_polling = True
+    global stopFlag, httpd, task_queue, handlers, app, customEvent
+    
+    # Stop the task thread
+    if stopFlag:
+        stopFlag.set()
 
-  
-    # while not task_queue.empty():
-    #     try:
-    #         task_queue.get_nowait() 
-    #         if task_queue.empty(): 
-    #             break
-            
-    #     except:
-    #         break
+    # Clean up event handlers
+    for handler in handlers:
+        try:
+            if customEvent:
+                customEvent.remove(handler)
+        except:
+            pass
+    
+    handlers.clear()
+
+    # Clear the queue without processing (avoid freezing)
+    while not task_queue.empty():
+        try:
+            task_queue.get_nowait() 
+            if task_queue.empty(): 
+                break
+        except:
+            break
+
+    # Stop HTTP server
+    if httpd:
+        try:
+            httpd.shutdown()
+        except:
+            pass
 
   
     if httpd:
@@ -460,10 +621,6 @@ def stop(context):
         except:
             pass
         httpd = None
-
-    
-
-   
     try:
         app = adsk.core.Application.get()
         if app:
@@ -472,4 +629,3 @@ def stop(context):
                 ui.messageBox("Fusion HTTP Add-In gestoppt")
     except:
         pass
-
