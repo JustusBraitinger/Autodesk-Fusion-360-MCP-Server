@@ -75,6 +75,10 @@ Click on your desired prompt
 - **Export** : Export sketch as STEP or STL
 - **Shell body** : Shells a body with given thickness and face index
 - **Undo Command** : Undos last change
+- **Draw multiple lines** : Draws lines with given coordinates
+- **3-Point-Arc** : Creates a 3-Point-Arc
+- **Revolve** : Asks in Fusion for the body and the axis and revolves with given angle
+- 
 
 
 
