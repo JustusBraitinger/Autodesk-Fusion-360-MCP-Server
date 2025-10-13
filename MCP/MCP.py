@@ -67,7 +67,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             else:
                 draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], None)
         elif task[0] == 'draw_witzenmann':
-            draw_Witzenmann(design, ui)
+            draw_Witzenmann(design, ui, task[1])
         elif task[0] == 'export_stl':
             FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
             export_as_STL(design, ui, FilePath)
@@ -77,7 +77,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
             export_as_STEP(design, ui, FilePath)
         elif task[0] == 'draw_cylinder':
-            draw_cylinder(design, ui, task[1], task[2], task[3], task[4], task[5])
+            draw_cylinder(design, ui, task[1], task[2], task[3], task[4], task[5],task[6])
         elif task[0] == 'shell_body':
             shell_existing_body(design, ui, task[1], task[2])
         elif task[0] == 'undo':
@@ -86,10 +86,18 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             draw_lines(design, ui, task[1], task[2])
         elif task[0] == 'extrude_last_sketch':
             extrude_last_sketch(design, ui, task[1])
+        elif task[0] == 'revolve_profile':
+            rootComp = design.rootComponent
+            sketches = rootComp.sketches
+            sketch = sketches.item(sketches.count - 1)  # Letzter Sketch
+            axisLine = sketch.sketchCurves.sketchLines.item(0)  # Erste Linie als Achse
+            revolve_profile(design, ui,  task[1])        
+        elif task[0] == 'arc':
+            arc(design, ui, task[1], task[2], task[3], task[4])
+        elif task[0] == 'draw_one_line':
+            draw_one_line(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
+        
 
-# ##################################
-# Thread für regelmäßige Task-Verarbeitung
-# ##################################
 class TaskThread(threading.Thread):
     def __init__(self, event):
         threading.Thread.__init__(self)
@@ -104,6 +112,32 @@ class TaskThread(threading.Thread):
                 break
 
 
+def arc(design,ui,point1,point2,points3,plane = "XY"):
+    """
+    This creates arc between two points on the specified plane
+    """
+    try:
+        rootComp = design.rootComponent #Holen der Rotkomponente
+        sketches = rootComp.sketches
+        xyPlane = rootComp.xYConstructionPlane 
+        if plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        else:
+            xyPlane = rootComp.xYConstructionPlane 
+
+            sketch = sketches.add(xyPlane)
+        start  = adsk.core.Point3D.create(point1[0],point1[1],point1[2])
+        alongpoint    = adsk.core.Point3D.create(point2[0],point2[1],point2[2])
+        endpoint =adsk.core.Point3D.create(points3[0],points3[1],points3[2])
+        arcs = sketch.sketchCurves.sketchArcs
+        arc = arcs.addByThreePoints(start, alongpoint, endpoint)
+        lines = sketch.sketchCurves.sketchLines
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 def draw_lines(design,ui, points,Plane = "XY"):
@@ -138,6 +172,26 @@ def draw_lines(design,ui, points,Plane = "XY"):
         if ui :
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
+def draw_one_line(design, ui, x1, y1, z1, x2, y2, z2, plane="XY"):
+    """
+    Draws a single line between two points (x1, y1, z1) and (x2, y2, z2) on the specified plane
+    Plane can be "XY", "XZ", or "YZ"
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        if plane == "XY":
+            sketch = sketches.add(rootComp.xYConstructionPlane)
+        elif plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        start = adsk.core.Point3D.create(x1, y1, 0)
+        end = adsk.core.Point3D.create(x2, y2, 0)
+        sketch.sketchCurves.sketchLines.addByTwoPoints(start, end)
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 def extrude_last_sketch(design, ui, value):
@@ -245,14 +299,36 @@ def fillet_edges(design, ui, radius=0.3):
         edgeSetInput = filletInput.edgeSetInputs.addConstantRadiusEdgeSet(edgeCollection, radiusInput, True)
         edgeSetInput.continuity = adsk.fusion.SurfaceContinuityTypes.TangentSurfaceContinuityType
         fillets.add(filletInput)
-        ui.messageBox('Failasdasdasdasdasded:\n{}'.format(traceback.format_exc()))
 
     except:
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+def revolve_profile(design, ui,  angle=360):
+    """
+    This function revolves already existing sketch with drawn lines from the function draw_lines
+    around the given axisLine by the specified angle (default is 360 degrees).
+    """
+    try:
+        rootComp = design.rootComponent
+        ui.messageBox('Select a profile to revolve.')
+        profile = ui.selectEntity('Select a profile to revolve.', 'Profiles').entity
+        ui.messageBox('Select sketch line for axis.')
+        axis = ui.selectEntity('Select sketch line for axis.', 'SketchLines').entity
+        operation = adsk.fusion.FeatureOperations.NewComponentFeatureOperation
+        revolveFeatures = rootComp.features.revolveFeatures
+        input = revolveFeatures.createInput(profile, axis, operation)
+        input.setAngleExtent(False, adsk.core.ValueInput.createByString(str(angle) + ' deg'))
+        revolveFeature = revolveFeatures.add(input)
 
 
-def draw_cylinder(design, ui, radius, height, x,y,z):
+
+    except:
+        if ui:
+            ui.messageBox('Failed revolve_profile:\n{}'.format(traceback.format_exc()))
+
+
+
+def draw_cylinder(design, ui, radius, height, x,y,z,plane = "XY"):
     """
     Draws a cylinder with given radius and height at position (x,y,z)
     """
@@ -260,7 +336,12 @@ def draw_cylinder(design, ui, radius, height, x,y,z):
         rootComp = design.rootComponent
         sketches = rootComp.sketches
         xyPlane = rootComp.xYConstructionPlane
-        sketch = sketches.add(xyPlane)
+        if plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        else:
+            sketch = sketches.add(xyPlane)
 
         center = adsk.core.Point3D.create(x, y, z)
         sketch.sketchCurves.sketchCircles.addByCenterRadius(center, radius)
@@ -307,8 +388,30 @@ def draw_Box(design, ui, height, width, depth,x,y, plane=None):
     except:
         if ui:
             ui.messageBox('Failed draw_Box:\n{}'.format(traceback.format_exc()))
-
-def draw_Witzenmann(design, ui):
+def draw_circle(design, ui, radius, x, y, plane="XY"):
+    """
+    Draws a circle with given radius at position (x,y) on the specified plane
+    Plane can be "XY", "XZ", or "YZ"
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        if plane == "XY":
+            sketch = sketches.add(rootComp.xYConstructionPlane)
+        elif plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        center = adsk.core.Point3D.create(x, y, 0)
+        sketch.sketchCurves.sketchCircles.addByCenterRadius(center, radius)
+    except:
+        if ui:
+            ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
+def draw_Witzenmann(design, ui,scaling):
+    """
+    Draws Witzenmannlogo 
+    can be scaled with scaling factor to make it bigger or smaller
+    """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
@@ -316,10 +419,10 @@ def draw_Witzenmann(design, ui):
         sketch = sketches.add(xyPlane)
 
         points1 = [
-            (8.283,10.475),(8.283,6.471),(-0.126,6.471),(8.283,2.691),
-            (8.283,-1.235),(-0.496,-1.246),(8.283,-5.715),(8.283,-9.996),
-            (-8.862,-1.247),(-8.859,2.69),(-0.639,2.69),(-8.859,6.409),
-            (-8.859,10.459)
+            (8.283*scaling,10.475*scaling),(8.283*scaling,6.471*scaling),(-0.126*scaling,6.471*scaling),(8.283*scaling,2.691*scaling),
+            (8.283*scaling,-1.235*scaling),(-0.496*scaling,-1.246*scaling),(8.283*scaling,-5.715*scaling),(8.283*scaling,-9.996*scaling),
+            (-8.862*scaling,-1.247*scaling),(-8.859*scaling,2.69*scaling),(-0.639*scaling,2.69*scaling),(-8.859*scaling,6.409*scaling),
+            (-8.859*scaling,10.459*scaling)
         ]
         for i in range(len(points1)-1):
             start = adsk.core.Point3D.create(points1[i][0], points1[i][1],0)
@@ -330,7 +433,7 @@ def draw_Witzenmann(design, ui):
             adsk.core.Point3D.create(points1[0][0],points1[0][1],0) #
         )
 
-        points2 = [(-3.391,-5.989),(5.062,-10.141),(-8.859,-10.141),(-8.859,-5.989)]
+        points2 = [(-3.391*scaling,-5.989*scaling),(5.062*scaling,-10.141*scaling),(-8.859*scaling,-10.141*scaling),(-8.859*scaling,-5.989*scaling)]
         for i in range(len(points2)-1):
             start = adsk.core.Point3D.create(points2[i][0], points2[i][1],0)
             end   = adsk.core.Point3D.create(points2[i+1][0], points2[i+1][1],0)
@@ -450,7 +553,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"message": "Box wird erstellt"}).encode('utf-8'))
 
             elif path == '/Witzenmann':
-                task_queue.put(('draw_witzenmann',))
+                scale = data.get('scale',1.0)
+                task_queue.put(('draw_witzenmann', scale))
+
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -486,7 +591,8 @@ class Handler(BaseHTTPRequestHandler):
                 x = float(data.get('x',0))
                 y = float(data.get('y',0))
                 z = float(data.get('z',0))
-                task_queue.put(('draw_cylinder', radius, height, x, y,z))
+                plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('draw_cylinder', radius, height, x, y,z, plane))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -518,7 +624,40 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Letzter Sketch wird extrudiert"}).encode('utf-8'))
-
+                
+            elif path == '/revolve':
+                angle = float(data.get('angle',360)) #360 as default
+                #axis = data.get('axis','X')  # 'X', 'Y', 'Z'
+                task_queue.put(('revolve_profile', angle))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Profil wird revolviert"}).encode('utf-8'))
+            elif path == '/arc':
+                point1 = data.get('point1', [0,0])
+                point2 = data.get('point2', [1,1])
+                point3 = data.get('point3', [2,0])
+                plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('arc', point1, point2, point3, plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Arc wird erstellt"}).encode('utf-8'))
+            
+            elif path == '/draw_one_line':
+                x1 = float(data.get('x1',0))
+                y1 = float(data.get('y1',0))
+                z1 = float(data.get('z1',0))
+                x2 = float(data.get('x2',1))
+                y2 = float(data.get('y2',1))
+                z2 = float(data.get('z2',0))
+                plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('draw_one_line', x1, y1, z1, x2, y2, z2, plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Line wird erstellt"}).encode('utf-8'))
+              
             else:
                 self.send_error(404,'Not Found')
 
@@ -531,14 +670,7 @@ def run_server():
     httpd = HTTPServer(server_address, Handler)
     httpd.serve_forever()
 
-# ##################################
-# Polling-Loop im Main-Thread
-# ##################################
-# Removed polling_loop - replaced with event-driven approach
 
-# ##################################
-# Add-In Event Handler
-# ##################################
 def run(context):
     global app, ui, design, handlers, stopFlag, customEvent
     try:
