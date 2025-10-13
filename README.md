@@ -102,28 +102,20 @@ def box():
 ## MCP.py
 
 This is the main addin.  
-Because the Fusion API is not threadsafe we need to start two external threads:  
-
-In the first one we start a thread for out HTTP-Server, with which one we are able to communicate with the MCP-Server (A websocket approach would maybe be better and more stable)
-
+Because the Fusion API is not threadsafe we handle external requests with the CustomEventHandler
 ```python
-# start HTTP-Server
-threading.Thread(target=run_server, daemon=True).start()
+class TaskEventHandler(adsk.core.CustomEventHandler):
 ```
 
-In the second one we start the polling loop thread:
+We use a queue for processing the tasks
 ```python
-threading.Thread(target=lambda: polling_loop(design, ui), daemon=True).start()
-```
+    def process_task(self, task):
+        global design, ui
+        
+        if task[0] == 'set_parameter':
+            set_parameter(design, ui, task[1], task[2])```
 
-### Polling loop :
 
-The polling loop checks the task queue and executes tasks in the main thread.  
-```python
-task = task_queue.get()
-if task[0] == 'set_parameter':
-  set_parameter(design, ui, task[1], task[2])
-```
 
 
 I chose this architecture as PoC but a websocket approach would probably be better.   
