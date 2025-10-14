@@ -50,9 +50,22 @@ The InsatllAddin.py file currently does **not** work
 
 
 ## Claude Usage
-After you run  
+Insert this in Claude dev Settings
 ```bash
-uv run mcp install MCP_Server.py
+
+{
+  "mcpServers": {
+    "FusionMCP": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\Users...Pathtopython
+        "run",
+        "MCP_Server.py"
+      ]
+    }
+  }
+}
 ```
 The MCP-Server should be visible in the developer Settings insider Claude Desktop    
 If not close Claude completly with Task-Manager and reopen it.   
