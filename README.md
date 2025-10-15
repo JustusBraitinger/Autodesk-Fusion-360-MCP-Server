@@ -35,12 +35,6 @@ cd Server
 pip install -r requirements.txt
 pip install "mcp[cli]"
 ```
-# Connect to Claude
-```bash
-uv run mcp install MCP_Server.py
-```
-
-
 
 ## Add Addin to Fusion
 
@@ -49,8 +43,14 @@ The InsatllAddin.py file currently does **not** work
 
 
 
-## Claude Usage
-Insert this in Claude dev Settings
+
+
+
+# Connect to Claude
+
+Go into the Claude Settings and click on developer   
+Click edit Config   
+Edit your JSON like below. Just change the Path to your path.
 ```bash
 
 {
@@ -73,6 +73,10 @@ Like in the video you can give Claude tasks.
 Click on the Plus on the bottom left of the chat.  
 Select "Add from Fusion"
 Click on your desired prompt
+
+
+
+
 
 
 
