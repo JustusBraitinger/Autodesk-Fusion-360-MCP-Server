@@ -1,14 +1,64 @@
 import requests
 from mcp.server.fastmcp import FastMCP
 import json
-mcp = FastMCP("Fusion")
-
+mcp = FastMCP("Fusion",
+              instructions ="""
+              FUSION 360 EINHEITEN - KRITISCH WICHTIG:
+                In Fusion 360 gilt: 1 Einheit = 1 mm (nicht 1 cm!)
+                
+                Beispiele:
+                - 28,3mm → radius: 14.15 (Durchmesser/2)
+                - 31,8mm → radius: 15.9
+                - 1,8mm Höhe → height: 1.8
+                
+                NIEMALS mit 10 multiplizieren! Die Werte direkt in mm verwenden.
+                              
+              """)
 
 @mcp.tool()
-def draw_witzenmannlogo(scale : float=1.0):
+def draw_holes(points : list,depth : float, width : float):
+    """
+    Zeichne Löcher in Fusion 360
+    Übergebe die Json in richter Form
+    Du muss die x und y koordinate angeben z = 0
+    Das wird meistens aufgerufen wenn eine Bohrung in der Mitte eines Kreises sein soll
+    Also wenn du ein zylinder baust musst du den Mittelpunkt des Zylinders angeben
+    Übergebe zusätzlich die Tiefe und den Durchmesser der Bohrung
+    Du machst im Moment  nur Counterbore holes
 
+    BSP:
+    2,1mm tief = depth: 0.21
+    Breite 10mm = diameter: 1.0
+    {
+    points : [[0,0,]],
+    width : 1.0,
+    depth : 0.21
+    }
+    """
+    url = "http://localhost:5000/holes"
     data = {
-        "scale": scale
+        "points": points,
+        "width": width,
+        "depth": depth
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    data = response.json()
+    return data
+@mcp.tool()
+def draw_witzenmannlogo(scale : float=1.0, z : float = 1.0):
+    """
+    Du baust das witzenmann logo
+    Du kannst es skalieren
+    es ist immer im Mittelpunkt
+    Du kannst die Höhe angeben mit z
+
+    :param scale:
+    :param z:
+    :return:
+    """
+    data = {
+        "scale": scale,
+        "z" : z
     }
 
     url = "http://localhost:5000/Witzenmann"
@@ -243,6 +293,18 @@ def summary():
 def weingals():
     return "Nutze folgende Koordinaten für Linien : [[0, 0], [0, -8], [1.5, -8], [1.5, -7], [0.3, -7], [0.3, -2], [3, -0.5], [3, 0], [0, 0]], Rufe danach die revolve Funktion auf"
 
+@mcp.prompt()
+def magnet():
+    mcp_prompt = """  
+        Erstelle ein zweiteiliges zylindrisches Bauteil: Beginne
+        mit dem unteren Zylinder (28,3 mm Durchmesser, 1,8 mm Höhe)
+        auf der Nullebene. Setze darauf den oberen Zylinder (31,8 mm Durchmesser, 3 mm Höhe) bei z=1,8 mm. 
+        Füge mittig eine Magnet-Aussparung (10 mm Durchmesser, 2,1 mm Tiefe) hinzu.
+        Abschließend wird das Witzenmann-Logo mit Skalierung 0,1 bei z=2,8 mm eingelassen, 
+        sodass es sich in die Oberfläche des oberen Zylinders einschmiegt.
+    """
+
+    return mcp_prompt
 
 mcp.run()
 
