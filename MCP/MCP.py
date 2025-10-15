@@ -67,7 +67,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             else:
                 draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], None)
         elif task[0] == 'draw_witzenmann':
-            draw_Witzenmann(design, ui, task[1])
+            draw_Witzenmann(design, ui, task[1],task[2])
         elif task[0] == 'export_stl':
             FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
             export_as_STL(design, ui, FilePath)
@@ -93,9 +93,12 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             axisLine = sketch.sketchCurves.sketchLines.item(0)  # Erste Linie als Achse
             revolve_profile(design, ui,  task[1])        
         elif task[0] == 'arc':
-            arc(design, ui, task[1], task[2], task[3], task[4])
+            arc(design, ui, task[1], task[2], task[3], task[4],task[5])
         elif task[0] == 'draw_one_line':
             draw_one_line(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
+        elif task[0] == 'holes': #task format: ('holes', points, width?, depth?, through?)
+            holes(design, ui, task[1], task[2], task[3])
+
         
 
 class TaskThread(threading.Thread):
@@ -112,7 +115,10 @@ class TaskThread(threading.Thread):
                 break
 
 
-def arc(design,ui,point1,point2,points3,plane = "XY"):
+
+
+
+def arc(design,ui,point1,point2,points3,plane = "XY",connect = False):
     """
     This creates arc between two points on the specified plane
     """
@@ -133,7 +139,14 @@ def arc(design,ui,point1,point2,points3,plane = "XY"):
         endpoint =adsk.core.Point3D.create(points3[0],points3[1],points3[2])
         arcs = sketch.sketchCurves.sketchArcs
         arc = arcs.addByThreePoints(start, alongpoint, endpoint)
-        lines = sketch.sketchCurves.sketchLines
+        if connect:
+            startconnect = adsk.core.Point3D.create(start.x, start.y, start.z)
+            endconnect = adsk.core.Point3D.create(endpoint.x, endpoint.y, endpoint.z)
+            lines = sketch.sketchCurves.sketchLines
+            lines.addByTwoPoints(startconnect, endconnect)
+            connect = False
+        else:
+            lines = sketch.sketchCurves.sketchLines
 
     except:
         if ui:
@@ -176,16 +189,15 @@ def draw_one_line(design, ui, x1, y1, z1, x2, y2, z2, plane="XY"):
     """
     Draws a single line between two points (x1, y1, z1) and (x2, y2, z2) on the specified plane
     Plane can be "XY", "XZ", or "YZ"
+    This function does not add a new sketch it is designed to be used after arc 
+    This is how we can make half circles and extrude them
+
     """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
-        if plane == "XY":
-            sketch = sketches.add(rootComp.xYConstructionPlane)
-        elif plane == "XZ":
-            sketch = sketches.add(rootComp.xZConstructionPlane)
-        elif plane == "YZ":
-            sketch = sketches.add(rootComp.yZConstructionPlane)
+        sketch = sketches.item(sketches.count - 1)
+        
         start = adsk.core.Point3D.create(x1, y1, 0)
         end = adsk.core.Point3D.create(x2, y2, 0)
         sketch.sketchCurves.sketchLines.addByTwoPoints(start, end)
@@ -407,10 +419,11 @@ def draw_circle(design, ui, radius, x, y, plane="XY"):
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
-def draw_Witzenmann(design, ui,scaling):
+def draw_Witzenmann(design, ui,scaling,z):
     """
     Draws Witzenmannlogo 
     can be scaled with scaling factor to make it bigger or smaller
+    The z Position can be adjusted with z parameter
     """
     try:
         rootComp = design.rootComponent
@@ -419,32 +432,32 @@ def draw_Witzenmann(design, ui,scaling):
         sketch = sketches.add(xyPlane)
 
         points1 = [
-            (8.283*scaling,10.475*scaling),(8.283*scaling,6.471*scaling),(-0.126*scaling,6.471*scaling),(8.283*scaling,2.691*scaling),
-            (8.283*scaling,-1.235*scaling),(-0.496*scaling,-1.246*scaling),(8.283*scaling,-5.715*scaling),(8.283*scaling,-9.996*scaling),
-            (-8.862*scaling,-1.247*scaling),(-8.859*scaling,2.69*scaling),(-0.639*scaling,2.69*scaling),(-8.859*scaling,6.409*scaling),
-            (-8.859*scaling,10.459*scaling)
+            (8.283*scaling,10.475*scaling,z),(8.283*scaling,6.471*scaling,z),(-0.126*scaling,6.471*scaling,z),(8.283*scaling,2.691*scaling,z),
+            (8.283*scaling,-1.235*scaling,z),(-0.496*scaling,-1.246*scaling,z),(8.283*scaling,-5.715*scaling,z),(8.283*scaling,-9.996*scaling,z),
+            (-8.862*scaling,-1.247*scaling,z),(-8.859*scaling,2.69*scaling,z),(-0.639*scaling,2.69*scaling,z),(-8.859*scaling,6.409*scaling,z),
+            (-8.859*scaling,10.459*scaling,z)
         ]
         for i in range(len(points1)-1):
-            start = adsk.core.Point3D.create(points1[i][0], points1[i][1],0)
-            end   = adsk.core.Point3D.create(points1[i+1][0], points1[i+1][1],0)
+            start = adsk.core.Point3D.create(points1[i][0], points1[i][1],points1[i][2])
+            end   = adsk.core.Point3D.create(points1[i+1][0], points1[i+1][1],points1[i+1][2])
             sketch.sketchCurves.sketchLines.addByTwoPoints(start,end) # Verbindungslinie zeichnen
         sketch.sketchCurves.sketchLines.addByTwoPoints(
-            adsk.core.Point3D.create(points1[-1][0],points1[-1][1],0),
-            adsk.core.Point3D.create(points1[0][0],points1[0][1],0) #
+            adsk.core.Point3D.create(points1[-1][0],points1[-1][1],points1[-1][2]),
+            adsk.core.Point3D.create(points1[0][0],points1[0][1],points1[0][2])
         )
 
-        points2 = [(-3.391*scaling,-5.989*scaling),(5.062*scaling,-10.141*scaling),(-8.859*scaling,-10.141*scaling),(-8.859*scaling,-5.989*scaling)]
+        points2 = [(-3.391*scaling,-5.989*scaling,z),(5.062*scaling,-10.141*scaling,z),(-8.859*scaling,-10.141*scaling,z),(-8.859*scaling,-5.989*scaling,z)]
         for i in range(len(points2)-1):
-            start = adsk.core.Point3D.create(points2[i][0], points2[i][1],0)
-            end   = adsk.core.Point3D.create(points2[i+1][0], points2[i+1][1],0)
+            start = adsk.core.Point3D.create(points2[i][0], points2[i][1],points2[i][2])
+            end   = adsk.core.Point3D.create(points2[i+1][0], points2[i+1][1],points2[i+1][2])
             sketch.sketchCurves.sketchLines.addByTwoPoints(start,end)
         sketch.sketchCurves.sketchLines.addByTwoPoints(
-            adsk.core.Point3D.create(points2[-1][0], points2[-1][1],0),
-            adsk.core.Point3D.create(points2[0][0], points2[0][1],0)
+            adsk.core.Point3D.create(points2[-1][0], points2[-1][1],points2[-1][2]),
+            adsk.core.Point3D.create(points2[0][0], points2[0][1],points2[0][2])
         )
 
         extrudes = rootComp.features.extrudeFeatures
-        distance = adsk.core.ValueInput.createByReal(2.0)
+        distance = adsk.core.ValueInput.createByReal(2.0*scaling)
         for i in range(sketch.profiles.count):
             prof = sketch.profiles.item(i)
             extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
@@ -489,7 +502,40 @@ def set_parameter(design, ui, name, value):
         if ui:
             ui.messageBox('Failed set_parameter:\n{}'.format(traceback.format_exc()))
 
+def holes(design, ui, points, width=1.0,distance = 1.0):
+    """Create one or more holes on a selected face.
 
+
+    """
+    try:
+        rootComp = design.rootComponent
+        holes = rootComp.features.holeFeatures
+        sketches = rootComp.sketches
+        ui.messageBox('Bitte eine Fläche auswählen, auf der das Loch platziert werden soll.')
+        selectedFace = ui.selectEntity('Select a face for the hole.', 'Faces').entity
+
+        sk = sketches.add(selectedFace)
+
+        if not points or not isinstance(points, (list, tuple)):
+            raise ValueError('points muss eine Liste von (x,y) Paaren sein')
+        tipangle = 90.0
+        holePoint = sk.sketchPoints.add(adsk.core.Point3D.create(points[0][0], points[0][1], 0))
+        tipangle = adsk.core.ValueInput.createByString('180 deg')
+        holedistance = adsk.core.ValueInput.createByReal(distance)
+    
+        holeDiam = adsk.core.ValueInput.createByReal(width)
+        holeInput = holes.createSimpleInput(holeDiam)
+        holeInput.tipAngle = tipangle
+        holeInput.setPositionBySketchPoint(holePoint)
+        holeInput.setDistanceExtent(holedistance)
+
+        # Add the hole
+        holes.add(holeInput)
+
+        ui.messageBox('Loch wurde erfolgreich erstellt!')
+    except Exception:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 # ##################################
 # HTTP Server
 # ##################################
@@ -554,7 +600,8 @@ class Handler(BaseHTTPRequestHandler):
 
             elif path == '/Witzenmann':
                 scale = data.get('scale',1.0)
-                task_queue.put(('draw_witzenmann', scale))
+                z = float(data.get('z',0))
+                task_queue.put(('draw_witzenmann', scale,z))
 
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
@@ -637,8 +684,9 @@ class Handler(BaseHTTPRequestHandler):
                 point1 = data.get('point1', [0,0])
                 point2 = data.get('point2', [1,1])
                 point3 = data.get('point3', [2,0])
+                connect = bool(data.get('connect', False))
                 plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
-                task_queue.put(('arc', point1, point2, point3, plane))
+                task_queue.put(('arc', point1, point2, point3, connect, plane))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -657,6 +705,19 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Line wird erstellt"}).encode('utf-8'))
+            
+            elif path == '/holes':
+                points = data.get('points', [[0,0]])
+                width = float(data.get('width', 1.0))
+                distance = data.get('depth', None)
+                if distance is not None:
+                    distance = float(distance)
+                through = bool(data.get('through', False))
+                task_queue.put(('holes', points, width, distance, through))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Loch wird erstellt"}).encode('utf-8'))
               
             else:
                 self.send_error(404,'Not Found')
@@ -687,9 +748,9 @@ def run(context):
         ModelParameterSnapshot = get_model_parameters(design)
 
         # Custom Event registrieren
-        customEvent = app.registerCustomEvent(myCustomEvent)
-        onTaskEvent = TaskEventHandler()
-        customEvent.add(onTaskEvent)
+        customEvent = app.registerCustomEvent(myCustomEvent) #Every 200ms we create a custom event which doesnt interfere with Fusion main thread
+        onTaskEvent = TaskEventHandler() #If we have tasks in the queue, we process them in the main thread
+        customEvent.add(onTaskEvent) # Here we add the event handler
         handlers.append(onTaskEvent)
 
         # Task Thread starten
