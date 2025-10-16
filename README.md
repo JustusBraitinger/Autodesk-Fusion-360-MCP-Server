@@ -204,4 +204,15 @@ The current Fusion 360 API has several limitations when used with modern MCP ope
 
 This project is therefore an experimental prototype to explore what is possible, rather than a production-ready solution.
 
+ # TODO 
+IMPORTANT : Add functionality for selecting body, sketches, pfofiles 
+
+
+### Future Tools :    
+- Offsetplane   
+- Thinextrude
+- Anglextrude
+- Sphere
+- Sektchcircle Sketchrectangle
+
  
