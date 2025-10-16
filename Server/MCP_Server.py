@@ -1,6 +1,10 @@
 import requests
 from mcp.server.fastmcp import FastMCP
 import json
+import argparse
+
+
+
 mcp = FastMCP("Fusion",
               instructions ="""
               FUSION 360 EINHEITEN - KRITISCH WICHTIG:
@@ -304,7 +308,14 @@ def magnet():
         sodass es sich in die Oberfläche des oberen Zylinders einschmiegt.
     """
 
-    return mcp_prompt
+ 
 
-mcp.run()
+if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--server_type", type=str, default="sse", choices=["sse", "stdio"]
+    )
+    args = parser.parse_args()
+
+    mcp.run(transport=args.server_type)
