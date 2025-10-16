@@ -74,8 +74,22 @@ Click on the Plus on the bottom left of the chat.
 Select "Add from Fusion"
 Click on your desired prompt
 
+## Connect MCP inside VS-Code to Copilot
 
-
+If you have a copilot license inside VS-Code you just have to copy this json into the **`mcp.json`**    
+After that you just start the **`MCP_Server.py`** and you can use the mcp Server inside of Visual Studio Code
+```bash
+{
+	"servers": {
+		"FusionMCP": {
+			"url": "http://127.0.0.1:8000/sse",
+			"type": "http"
+		},
+		
+	},
+	"inputs": []
+}
+```
 
 
 
