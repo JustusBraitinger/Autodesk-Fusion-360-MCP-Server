@@ -190,10 +190,6 @@ It is extremly important that you never call Fusion API outside of the main thre
 
 
 
-## Possible extensions
-
-- Make it possible to extrude, shell, revolve (Pretty hard to select the right body and side if many bodies are involved)
-- For show I could implement cameramovement after a prompt
   
 # Disclaimer
 
