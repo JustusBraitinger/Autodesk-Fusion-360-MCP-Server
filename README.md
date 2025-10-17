@@ -66,7 +66,18 @@ Edit your JSON like below. Just change the Path to your path.
     }
   }
 }
+
+
 ```
+Now run the command 
+```bash
+uv run mcp install MCP_Server.py
+``` 
+
+
+
+
+
 The MCP-Server should be visible in the developer Settings insider Claude Desktop    
 If not close Claude completly with Task-Manager and reopen it.   
 Like in the video you can give Claude tasks.   
