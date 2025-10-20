@@ -50,7 +50,7 @@ The InsatllAddin.py file currently does **not** work
 
 Go into the Claude Settings and click on developer   
 Click edit Config   
-Edit your JSON like below. Just change the Path to your path.
+Edit your JSON like below. Just change the Path to your path of the python script which runs your Server.
 ```bash
 
 {
