@@ -16,7 +16,15 @@ mcp = FastMCP("Fusion",
                 - 1,8mm Höhe → height: 1.8
                 
                 NIEMALS mit 10 multiplizieren! Die Werte direkt in mm verwenden.
-                              
+                 SWEEP-REIHENFOLGE (WICHTIG):
+                1. Profil erstellen (Kreis/Rechteck/Linien) in der angegebenen Plane
+                2. Spline für Sweep-Pfad in der angegebenen Plane zeichnen
+                3. Sweep ausführen
+
+                PLANE-ACHTUNG:
+                - Profil und Spline müssen in UNTERSCHIEDLICHEN Planes sein!
+                - Normalerweise: Profil in YZ, Spline in XY
+- Immer die Planes beachten, die der Nutzer angibt!             
               """)
 
 @mcp.tool()
@@ -70,7 +78,37 @@ def draw_witzenmannlogo(scale : float=1.0, z : float = 1.0):
 
     data = response.json()
     return data
+@mcp.tool()
+def spline(points : list, plane : str):
+    """
+    Zeichne eine Spline Kurve in Fusion 360
+    Du kannst die Punkte als Liste von Listen übergeben
+    Beispiel: [[0,0,0],[5,0,0],[5,5,5],[0,5,5],[0,0,0]]
+    Es ist essenziell, dass du die Z-Koordinate angibst, auch wenn sie 0 ist
+    Wenn nicht explizit danach gefragt ist mache es so, dass die Linien nach oben zeigen
+    Du kannst die Ebene als String übergeben
+    Beispiel: "XY", "YZ", "XZ"
+    """
+    url = "http://localhost:5000/spline"
+    data = {
+        "points": points,
+        "plane": plane
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
 
+@mcp.tool()
+def sweep():
+    """
+    Benutzt den vorhrig erstellten spline und den davor erstellten kreis um eine sweep funktion auszuführen
+    
+    
+    """
+    r = requests.post("http://localhost:5000/sweep")
+
+    data = r.json()
+
+    return data
 @mcp.tool()
 def undo():
     r = requests.post("http://localhost:5000/undo")
@@ -172,8 +210,6 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
 @mcp.tool()
 def shell_body(thickness: float, faceindex: int):
     """
-
-
     Du kannst die Dicke der Wand als Float übergeben
     Du kannst den Faceindex als Integer übergeben
     WEnn du davor eine Box abgerundet hast muss die im klaren sein, dass du 20 neue Flächen hast. Die sind alle die kleinen abgerundeten
@@ -275,7 +311,31 @@ def draw_one_line(x1: float, y1: float, z1: float, x2: float, y2: float, z2: flo
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 
-
+@mcp.tool()
+def draw2Dcirle(radius : float, x:float, y:float, plane:str="XY"):
+    """
+    Zeichne einen Kreis in Fusion 360
+    Du kannst den Radius als Float übergeben
+    Du kannst die Koordinaten als Float übergeben
+    Du kannst die Ebene als String übergeben
+    Beispiel: "XY", "YZ", "XZ"
+    Gib immer JSON SO:
+    {
+        "radius":5,
+        "x":0,
+        "y":0,
+        "plane":"XY"
+    }
+    """
+    url = "http://localhost:5000/create_circle"
+    data = {
+        "radius": radius,
+        "x": x,
+        "y": y,
+        "plane": plane
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
 
 
 
@@ -297,6 +357,12 @@ def summary():
 def weingals():
     return "Nutze folgende Koordinaten für Linien : [[0, 0], [0, -8], [1.5, -8], [1.5, -7], [0.3, -7], [0.3, -2], [3, -0.5], [3, 0], [0, 0]], Rufe danach die revolve Funktion auf"
 
+
+
+
+
+
+
 @mcp.prompt()
 def magnet():
     mcp_prompt = """  
@@ -304,9 +370,10 @@ def magnet():
         mit dem unteren Zylinder (28,3 mm Durchmesser, 1,8 mm Höhe)
         auf der Nullebene. Setze darauf den oberen Zylinder (31,8 mm Durchmesser, 3 mm Höhe) bei z=1,8 mm. 
         Füge mittig eine Magnet-Aussparung (10 mm Durchmesser, 2,1 mm Tiefe) hinzu.
-        Abschließend wird das Witzenmann-Logo mit Skalierung 0,1 bei z=2,8 mm eingelassen, 
+        Abschließend wird das Witzenmann-Logo mit Skalierung 0,1 bei z=0.28 eingelassen, 
         sodass es sich in die Oberfläche des oberen Zylinders einschmiegt.
     """
+    return mcp_prompt
 
  
 
