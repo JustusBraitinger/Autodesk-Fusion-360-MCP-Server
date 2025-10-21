@@ -123,6 +123,7 @@ After that you just start the **`MCP_Server.py`** and you can use the mcp Server
 - **3-Point-Arc** : Creates a 3-Point-Arc
 - **Revolve** : Asks in Fusion for the body and the axis and revolves with given angle
 - **Sweep** : Draws circle first, then spline, then sweeps
+- **Thin-extrude** : Extrudes thin with given wall thickness
 
 
 
