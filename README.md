@@ -141,7 +141,7 @@ def count() :
     data = r.json()
 ```
 
-There are also predetermined prompts which you can define by @mcp.prompt(). In the following example it gives instructions how to interact with the user, if asked for a box.
+There are also predetermined prompts which you can define by **`@mcp.prompt() `**. In the following example it gives instructions how to interact with the user, if asked for a box.
 ```python
 @mcp.prompt()
 def box():
