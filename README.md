@@ -112,9 +112,9 @@ After that you just start the **`MCP_Server.py`** and you can use the mcp Server
 
 - **Count_parameters** : Just counts parameters
 - **List_parametsers** : Lists all Modelparams
-- **Draw_Box** : Draws a box with given dimensions (Height,Width,Lenth,x,y) => Only in XY currently
+- **Draw_Box** : Draws a box with given dimensions (Height,Width,Lenth,x,y)
 - **Draw_Witzenmann** : Draws the Witzenmann logo in 3D
-- **Draw_Cylinder** : Draws a cylinder with given dimenstions, also only in XY currently
+- **Draw_Cylinder** : Draws a cylinder with given dimenstions
 - **Fillet_Edges** : Fillet edges with a given radius
 - **Export** : Export sketch as STEP or STL
 - **Shell body** : Shells a body with given thickness and face index
