@@ -71,7 +71,7 @@ Edit your JSON like below. Just change the Path to your path of the python scrip
 
 Or run the command 
 ```bash
-uv run MCP_Server.py
+uv run mcp install MCP_Server.py
 ```
 The output should be :
 ```bash
