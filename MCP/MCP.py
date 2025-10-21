@@ -98,7 +98,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'circle':
             draw_circle(design, ui, task[1], task[2], task[3], task[4])
         elif task[0] == 'extrude_thin':
-            extrude_thin(design, ui, task[1], task[2])
+            extrude_thin(design, ui, task[1])
         elif task[0] == 'select_body':
             select_body(design, ui, task[1])
         elif task[0] == 'select_sketch':
@@ -176,6 +176,14 @@ def draw_circle(design, ui, radius, x, y, plane="XY"):
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
+
+
+
+def draw_sphere(design, ui, radius, x, y, z):
+    rootComp = design.rootComponent
+    sketches = rootComp.sketches
+    sketch = sketches.add(rootComp.xYConstructionPlane)
+    
 
 
 def draw_Witzenmann(design, ui,scaling,z):
@@ -516,21 +524,22 @@ def export_as_STEP(design, ui, FilePath):
 
 
 
-
-
-
-
-
-def extrude_thin(design, ui, angle,thickness=0.5):
+def extrude_thin(design, ui, thickness=0.5):
     rootComp = design.rootComponent
-    ui.messageBox('Select a profile to extrude.')
-    profile = ui.selectEntity('Select a profile to extrude.', 'Profiles').entity
-    operation = adsk.fusion.FeatureOperations.NewComponentFeatureOperation
-    extrudeFeatures = rootComp.features.extrudeFeatures
-    input = extrudeFeatures.createInput(profile, operation)
-    input.setThinWallThickness(adsk.core.ValueInput.createByReal(thickness))
-    input.setDistanceExtent(False, adsk.core.ValueInput.createByString(str(angle) + ' deg'))
-    extrudeFeature = extrudeFeatures.add(input)
+    sketches = rootComp.sketches
+    
+    #ui.messageBox('Select a face for the extrusion.')
+    #selectedFace = ui.selectEntity('Select a face for the extrusion.', 'Profiles').entity
+    selectedFace = sketches.item(sketches.count - 1).profiles.item(0)
+    exts = rootComp.features.extrudeFeatures
+    extInput = exts.createInput(selectedFace, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+    extInput.setThinExtrude(adsk.fusion.ThinExtrudeWallLocation.Center,
+                            adsk.core.ValueInput.createByReal(1))
+
+    distanceExtent = adsk.fusion.DistanceExtentDefinition.create(adsk.core.ValueInput.createByReal(5))
+    extInput.setOneSideExtent(distanceExtent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
+
+    ext = exts.add(extInput)
 
 
 def draw_cylinder(design, ui, radius, height, x,y,z,plane = "XY"):
@@ -854,10 +863,10 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Circle wird erstellt"}).encode('utf-8'))
+
             elif path == '/extrude_thin':
-                angle = float(data.get('angle',10.0)) #10.0 as default
                 thickness = float(data.get('thickness',0.5)) #0.5 as default
-                task_queue.put(('extrude_thin', angle, thickness))
+                task_queue.put(('extrude_thin', thickness))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
