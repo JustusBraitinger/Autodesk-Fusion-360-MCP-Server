@@ -67,15 +67,17 @@ Edit your JSON like below. Just change the Path to your path of the python scrip
   }
 }
 
-
 ```
-Now run the command 
+
+Or run the command 
 ```bash
-uv run mcp install MCP_Server.py
-``` 
-
-
-
+uv run MCP_Server.py
+```
+The output should be :
+```bash
+[10/21/25 07:40:09] INFO     Added server 'Fusion' to Claude config                                                                                                                                           
+                    INFO     Successfully installed Fusion in Claude app     
+```
 
 
 The MCP-Server should be visible in the developer Settings insider Claude Desktop    
