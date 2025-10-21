@@ -87,6 +87,7 @@ def spline(points : list, plane : str):
     Es ist essenziell, dass du die Z-Koordinate angibst, auch wenn sie 0 ist
     Wenn nicht explizit danach gefragt ist mache es so, dass die Linien nach oben zeigen
     Du kannst die Ebene als String übergeben
+    Es ist essenziell, dass die linien eine andere ebene haben als das profil was du sweepen willst
     Beispiel: "XY", "YZ", "XZ"
     """
     url = "http://localhost:5000/spline"
@@ -188,6 +189,7 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
     Depth ist die Tiefe in z Richtung
     Ganz wichtg 10 ist 100mm in Fusion 360
     Du kannst die Ebene als String übergeben
+    Depth ist die eigentliche höhe in z Richtung
 
     Beispiel: "XY", "YZ", "XZ"
     """
@@ -208,12 +210,15 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
     return response.json()
 
 @mcp.tool()
-def shell_body(thickness: float, faceindex: int):
+def shell_body(thickness: float, faceindex: int, Bodyname : str ="Body1"):
     """
     Du kannst die Dicke der Wand als Float übergeben
     Du kannst den Faceindex als Integer übergeben
     WEnn du davor eine Box abgerundet hast muss die im klaren sein, dass du 20 neue Flächen hast. Die sind alle die kleinen abgerundeten
     Falls du eine Box davor die Ecken verrundet hast, dann ist der Facinedex der großen Flächen mindestens 21
+    Du musst den Bodynamen angeben, standardmäßig ist der Bodyname "Body1" also der erste Körper der erstellt wurde
+
+
     :param thickness:
     :param faceindex:
     :return:
@@ -221,7 +226,8 @@ def shell_body(thickness: float, faceindex: int):
     url = "http://localhost:5000/shell_body"
     data = {
         "thickness": thickness,
-        "faceindex": faceindex
+        "faceindex": faceindex,
+        "Bodyname": "Bodyname"
     }
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
@@ -255,6 +261,22 @@ def extrude(value : float):
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 
+@mcp.tool()
+def extrude_thin(thickness :float):
+    """
+    Du kannst die Dicke der Wand als Float übergeben
+    Du kannst schöne Hohlkörper damit erstellen
+    :param thickness: Die Dicke der Wand in mm
+    """
+    url = "http://localhost:5000/extrude_thin"
+    data = {
+        "thickness": thickness
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
+
+
+
 
 @mcp.tool()
 def revolve(angle : float):
@@ -277,6 +299,7 @@ def draw_arc(point1 : list, point2 : list, point3 : list, plane : str):
     Du kannst die Punkte als Liste von Listen übergeben
     Beispiel: point1 = [0,0,0], point2 = [5,5,5], point3 = [10,0,0]
     Du kannst die Ebene als String übergeben
+    Es wird eine Linie von point1 zu point3 gezeichnet die durch point2 geht also musst du nicht extra eine Linie zeichnen
     Beispiel: "XY", "YZ", "XZ"
 
     """
