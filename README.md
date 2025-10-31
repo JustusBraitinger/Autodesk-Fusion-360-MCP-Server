@@ -145,8 +145,7 @@ Then in VS Code, type:
 ```
 /mcp.FusionMCP
 ```
-
-Fusion will start responding to AI requests.
+Now you will see a list of predetermined Prompts.   
 
 ---
 
