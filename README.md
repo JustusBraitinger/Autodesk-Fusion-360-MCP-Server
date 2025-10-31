@@ -92,7 +92,8 @@ Click on your desired prompt
 ## Connect MCP inside VS-Code to Copilot
 
 If you have a copilot license inside VS-Code you just have to copy this json into the **`mcp.json`**    
-After that you just start the **`MCP_Server.py`** and you can use the mcp Server inside of Visual Studio Code
+After that you just start the **`MCP_Server.py`** and you can use the mcp Server inside of Visual Studio Code   
+
 ```bash
 {
 	"servers": {
@@ -105,11 +106,25 @@ After that you just start the **`MCP_Server.py`** and you can use the mcp Server
 	"inputs": []
 }
 ```
-#Try it out 😄
+### Alternative Setup Method
+
+You can also press **`CTRL + SHIFT + P`** and search for **MCP**.  
+Then click **`Add MCP`** and choose the **`HTTP`** option.   
+Now add following URL:
+```bash
+http://127.0.0.1:8000/ss
+```
+
+
+
+
+
+
+# Try it out 😄
 
 If you finished all of the instructions above you are all set to try out the FusionMCP.   
 Inside VS-Code you can find the predetermined prompt, if you type in :
-```bash /mcpFusionMCPMagnet```
+**`mcpFusionMCPMagnet`**   
 
 
 
