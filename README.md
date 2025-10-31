@@ -28,6 +28,12 @@ Install Fusion
 ```bash
 git clone https://github.com/JustusBraitinger/FusionMCP
 ```
+## Add Addin to Fusion
+
+To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.    
+Do NOT start the Addin just yet
+
+
 # Install packages
 ```bash
 cd FusionMCP
@@ -36,14 +42,10 @@ pip install -r requirements.txt
 pip install "mcp[cli]"
 ```
 
-## Add Addin to Fusion
-
-To add the Addin to Fusion open Fusion go to Utilities select ADD-INS click the plus and select the MCP folder of this repository.  
-The InsatllAddin.py file currently does **not** work
-
-
-
-
+Now open VS-Code and type:
+```bash
+.\venv\Scripts\Activate
+```
 
 
 # Connect to Claude
@@ -103,8 +105,11 @@ After that you just start the **`MCP_Server.py`** and you can use the mcp Server
 	"inputs": []
 }
 ```
+#Try it out 😄
 
-
+If you finished all of the instructions above you are all set to try out the FusionMCP.   
+Inside VS-Code you can find the predetermined prompt, if you type in :
+```bash /mcpFusionMCPMagnet```
 
 
 
