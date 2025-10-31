@@ -112,7 +112,7 @@ You can also press **`CTRL + SHIFT + P`** and search for **MCP**.
 Then click **`Add MCP`** and choose the **`HTTP`** option.   
 Now add following URL:
 ```bash
-http://127.0.0.1:8000/ss
+http://127.0.0.1:8000/sse
 ```
 
 
