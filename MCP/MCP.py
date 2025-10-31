@@ -59,10 +59,9 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         if task[0] == 'set_parameter':
             set_parameter(design, ui, task[1], task[2])
         elif task[0] == 'draw_box':
-            if len(task) >= 7:
-                draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], task[6])
-            else:
-                draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], None)
+            
+            draw_Box(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
+            
         elif task[0] == 'draw_witzenmann':
             draw_Witzenmann(design, ui, task[1],task[2])
         elif task[0] == 'export_stl':
@@ -76,7 +75,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'draw_cylinder':
             draw_cylinder(design, ui, task[1], task[2], task[3], task[4], task[5],task[6])
         elif task[0] == 'shell_body':
-            shell_existing_body(design, ui, task[1], task[2],task[3])
+            shell_existing_body(design, ui, task[1], task[2])
         elif task[0] == 'undo':
             undo(design, ui)
         elif task[0] == 'draw_lines':
@@ -93,8 +92,9 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             arc(design, ui, task[1], task[2], task[3], task[4],task[5])
         elif task[0] == 'draw_one_line':
             draw_one_line(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
-        elif task[0] == 'holes': #task format: ('holes', points, width?, depth?, through?)
-            holes(design, ui, task[1], task[2], task[3])
+        elif task[0] == 'holes': #task format: ('holes', points, width, depth, through, faceindex)
+            # task[3]=depth, task[4]=through, task[5]=faceindex
+            holes(design, ui, task[1], task[2], task[3], task[4])
         elif task[0] == 'circle':
             draw_circle(design, ui, task[1], task[2], task[3], task[4])
         elif task[0] == 'extrude_thin':
@@ -107,6 +107,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             spline(design, ui, task[1], task[2])
         elif task[0] == 'sweep':
             sweep(design, ui)
+
 
 
 class TaskThread(threading.Thread):
@@ -125,7 +126,7 @@ class TaskThread(threading.Thread):
 
 
 ###Geometry Functions######
-def draw_Box(design, ui, height, width, depth,x,y, plane=None):
+def draw_Box(design, ui, height, width, depth,x,y,z, plane=None):
     """
     Draws Box with given dimensions height, width, depth
     
@@ -254,7 +255,7 @@ def spline(design, ui, points, plane="XY"):
         
         splinePoints = adsk.core.ObjectCollection.create()
         for point in points:
-            splinePoints.add(adsk.core.Point3D.create(point[0], point[1], 0))
+            splinePoints.add(adsk.core.Point3D.create(point[0], point[1], point[2]))
         
         sketch.sketchCurves.sketchFittedSplines.add(splinePoints)
     except:
@@ -353,6 +354,7 @@ def draw_one_line(design, ui, x1, y1, z1, x2, y2, z2, plane="XY"):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+
 #################################################################################
 
 
@@ -399,15 +401,14 @@ def extrude_last_sketch(design, ui, value,taperangle=0):
         if ui:
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
-def shell_existing_body(design, ui, thickness=0.5, faceindex=0, Bodyname=""):
+def shell_existing_body(design, ui, thickness=0.5, faceindex=0):
     """
     Shells the body on a specified face index with given thickness
     """
     try:
         rootComp = design.rootComponent
         features = rootComp.features
-
-        body = rootComp.bRepBodies.itemByName(Bodyname)
+        body = rootComp.bRepBodies.item(0)
 
         entities = adsk.core.ObjectCollection.create()
         entities.add(body.faces.item(faceindex))
@@ -607,7 +608,7 @@ def set_parameter(design, ui, name, value):
         if ui:
             ui.messageBox('Failed set_parameter:\n{}'.format(traceback.format_exc()))
 
-def holes(design, ui, points, width=1.0,distance = 1.0,sketchindex=0):
+def holes(design, ui, points, width=1.0,distance = 1.0,faceindex=0):
     """
     Create one or more holes on a selected face.
     """
@@ -616,13 +617,20 @@ def holes(design, ui, points, width=1.0,distance = 1.0,sketchindex=0):
         rootComp = design.rootComponent
         holes = rootComp.features.holeFeatures
         sketches = rootComp.sketches
-        ui.messageBox('Bitte eine Fläche auswählen, auf der das Loch platziert werden soll.')
-        selectedFace = ui.selectEntity('Select a face for the hole.', 'Faces').entity
+        
+        
+        rootComp = design.rootComponent
+        bodies = rootComp.bRepBodies
 
-        sk = sketches.add(selectedFace)
+        if bodies.count > 0:
+            latest_body = bodies.item(bodies.count - 1)
+        else:
+            ui.messageBox("Keine Bodies gefunden.")
+            return
+        entities = adsk.core.ObjectCollection.create()
+        entities.add(latest_body.faces.item(faceindex))
+        sk = sketches.add(latest_body.faces.item(faceindex))# create sketch on faceindex face
 
-        if not points or not isinstance(points, (list, tuple)):
-            raise ValueError('points muss eine Liste von (x,y) Paaren sein')
         tipangle = 90.0
         for i in range(len(points)):
             holePoint = sk.sketchPoints.add(adsk.core.Point3D.create(points[i][0], points[i][1], 0))
@@ -722,9 +730,10 @@ class Handler(BaseHTTPRequestHandler):
                 depth = float(data.get('depth',5))
                 x = float(data.get('x',0))
                 y = float(data.get('y',0))
+                z = float(data.get('z',0))
                 Plane = data.get('plane',None)  # 'XY', 'XZ', 'YZ' or None
 
-                task_queue.put(('draw_box', height, width, depth,x,y, Plane))
+                task_queue.put(('draw_box', height, width, depth,x,y,z, Plane))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -781,8 +790,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/shell_body':
                 thickness = float(data.get('thickness',0.5)) #0.5 as default
                 faceindex = int(data.get('faceindex',0))
-                Bodyname = str(data.get('Bodyname','Body1'))
-                task_queue.put(('shell_body', thickness, faceindex, Bodyname))
+                task_queue.put(('shell_body', thickness, faceindex))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -842,11 +850,12 @@ class Handler(BaseHTTPRequestHandler):
             elif path == '/holes':
                 points = data.get('points', [[0,0]])
                 width = float(data.get('width', 1.0))
+                faceindex = int(data.get('faceindex', 0))
                 distance = data.get('depth', None)
                 if distance is not None:
                     distance = float(distance)
                 through = bool(data.get('through', False))
-                task_queue.put(('holes', points, width, distance, through))
+                task_queue.put(('holes', points, width, distance,  faceindex))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -905,6 +914,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Spline wird erstellt"}).encode('utf-8'))
+
+     
+     
             
             else:
                 self.send_error(404,'Not Found')
