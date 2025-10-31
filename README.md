@@ -127,6 +127,7 @@ Paste:
 2. **Add MCP**
 3. **HTTP**
 4. Enter:
+5. Name your MCP **`FusionMCP`**!!
 ```
 http://127.0.0.1:8000/sse
 ```
@@ -142,7 +143,7 @@ python MCP_Server.py
 
 Then in VS Code, type:
 ```
-mcpFusionMCPMagnet
+/mcp.FusionMCP
 ```
 
 Fusion will start responding to AI requests.
