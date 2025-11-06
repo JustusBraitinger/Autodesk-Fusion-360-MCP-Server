@@ -96,7 +96,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             # task[3]=depth, task[4]=through, task[5]=faceindex
             holes(design, ui, task[1], task[2], task[3], task[4])
         elif task[0] == 'circle':
-            draw_circle(design, ui, task[1], task[2], task[3], task[4])
+            draw_circle(design, ui, task[1], task[2], task[3], task[4],task[5])
         elif task[0] == 'extrude_thin':
             extrude_thin(design, ui, task[1])
         elif task[0] == 'select_body':
@@ -107,7 +107,10 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             spline(design, ui, task[1], task[2])
         elif task[0] == 'sweep':
             sweep(design, ui)
-
+        elif task[0] == 'cut_extrude':
+            cut_extrude(design,ui,task[1])
+        elif task[0] == 'circular_pattern':
+            circular_pattern(design,ui,task[1],task[2],task[3])
 
 
 class TaskThread(threading.Thread):
@@ -128,25 +131,37 @@ class TaskThread(threading.Thread):
 ###Geometry Functions######
 def draw_Box(design, ui, height, width, depth,x,y,z, plane=None):
     """
-    Draws Box with given dimensions height, width, depth
-    
+    Draws Box with given dimensions height, width, depth at position (x,y,z)
+    z creates an offset construction plane
     """
     try:
         rootComp = design.rootComponent
         sketches = rootComp.sketches
-        xyPlane = rootComp.xYConstructionPlane
-        xZPlane = rootComp.xZConstructionPlane
-        yZPlane = rootComp.yZConstructionPlane
+        planes = rootComp.constructionPlanes
+        
+        # Choose base plane based on parameter
         if plane == 'XZ':
-            sketch = sketches.add(rootComp.xZConstructionPlane)
+            basePlane = rootComp.xZConstructionPlane
         elif plane == 'YZ':
-            sketch = sketches.add(rootComp.yZConstructionPlane)
+            basePlane = rootComp.yZConstructionPlane
         else:
-            sketch = sketches.add(xyPlane)
+            basePlane = rootComp.xYConstructionPlane
+        
+        # Create offset plane at z if z != 0
+        if z != 0:
+            planeInput = planes.createInput()
+            offsetValue = adsk.core.ValueInput.createByReal(z)
+            planeInput.setByOffset(basePlane, offsetValue)
+            offsetPlane = planes.add(planeInput)
+            sketch = sketches.add(offsetPlane)
+        else:
+            sketch = sketches.add(basePlane)
+        
         lines = sketch.sketchCurves.sketchLines
+        # addCenterPointRectangle: (center, corner-relative-to-center)
         lines.addCenterPointRectangle(
             adsk.core.Point3D.create(x, y, 0),
-            adsk.core.Point3D.create(width/2, height/2, 0)
+            adsk.core.Point3D.create(x + width/2, y + height/2, 0)
         )
         prof = sketch.profiles.item(0)
         extrudes = rootComp.features.extrudeFeatures
@@ -157,7 +172,7 @@ def draw_Box(design, ui, height, width, depth,x,y,z, plane=None):
     except:
         if ui:
             ui.messageBox('Failed draw_Box:\n{}'.format(traceback.format_exc()))
-def draw_circle(design, ui, radius, x, y, plane="XY"):
+def draw_circle(design, ui, radius, x, y, z, plane="XY"):
     """
     Draws a circle with given radius at position (x,y) on the specified plane
     Plane can be "XY", "XZ", or "YZ"
@@ -173,7 +188,7 @@ def draw_circle(design, ui, radius, x, y, plane="XY"):
             sketch = sketches.add(rootComp.yZConstructionPlane)
     
         circles = sketch.sketchCurves.sketchCircles
-        circles.addByCenterRadius(adsk.core.Point3D.create(x, y, 0), radius)
+        circles.addByCenterRadius(adsk.core.Point3D.create(x, y, z), radius)
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
@@ -482,7 +497,41 @@ def revolve_profile(design, ui,  angle=360):
 ###Selection Functions######
 
 
+def circular_pattern(design, ui, quantity, axis, plane):
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        circularFeats = rootComp.features.circularPatternFeatures
+        body = rootComp.bRepBodies.item(0)
+        inputEntites = adsk.core.ObjectCollection.create()
+        inputEntites.add(body)
+        if plane == "XY":
+            sketch = sketches.add(rootComp.xYConstructionPlane)
+        elif plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)    
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        
+        if axis == "Y":
+            yAxis = rootComp.yConstructionAxis
+            circularFeatInput = circularFeats.createInput(inputEntites, yAxis)
+        elif axis == "X":
+            xAxis = rootComp.xConstructionAxis
+            circularFeatInput = circularFeats.createInput(inputEntites, xAxis)
+        elif axis == "Z":
+            zAxis = rootComp.zConstructionAxis
+            circularFeatInput = circularFeats.createInput(inputEntites, zAxis)
 
+        circularFeatInput.quantity = adsk.core.ValueInput.createByReal((quantity))
+        circularFeatInput.totalAngle = adsk.core.ValueInput.createByString('360 deg')
+        circularFeatInput.isSymmetric = False
+        circularFeats.add(circularFeatInput)
+        
+        
+
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 
@@ -523,6 +572,20 @@ def export_as_STEP(design, ui, FilePath):
         if ui:
             ui.messageBox('Failed export_as_STEP:\n{}'.format(traceback.format_exc()))
 
+def cut_extrude(design,ui,depth):
+    try:
+        rootComp = design.rootComponent 
+        sketches = rootComp.sketches
+        sketch = sketches.item(sketches.count - 1)  # Letzter Sketch
+        prof = sketch.profiles.item(0)  # Erstes Profil im Sketch
+        extrudes = rootComp.features.extrudeFeatures
+        extrudeInput = extrudes.createInput(prof,adsk.fusion.FeatureOperations.CutFeatureOperation)
+        distance = adsk.core.ValueInput.createByReal(depth)
+        extrudeInput.setDistanceExtent(False, distance)
+        extrudes.add(extrudeInput)
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 def extrude_thin(design, ui, thickness=0.5):
@@ -866,8 +929,9 @@ class Handler(BaseHTTPRequestHandler):
                 radius = float(data.get('radius',1.0))
                 x = float(data.get('x',0))
                 y = float(data.get('y',0))
+                z = float(data.get('z',0))
                 plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
-                task_queue.put(('circle', radius, x, y, plane))
+                task_queue.put(('circle', radius, x, y,z, plane))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -915,7 +979,25 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Spline wird erstellt"}).encode('utf-8'))
 
-     
+            elif path == '/cut_extrude':
+                depth = float(data.get('depth',1.0)) #1.0 as default
+                task_queue.put(('cut_extrude', depth))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Cut Extrude wird erstellt"}).encode('utf-8'))
+            
+            elif path == '/circular_pattern':
+                quantity = float(data.get('quantity',))
+                axis = str(data.get('axis',"X"))
+                plane = str(data.get('plane', 'XY'))  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('circular_pattern',quantity,axis,plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Cirular Pattern wird erstellt"}).encode('utf-8'))
+
+
      
             
             else:
