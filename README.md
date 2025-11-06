@@ -182,6 +182,9 @@ Now you will see a list of predetermined Prompts.
 | Revolve | Revolves profile |
 | Sweep | Circle + spline sweep |
 | Thin extrusion | Thin wall extrusion |
+| Cut extrude | Makes hole with sketch|
+| Circular pattern| fucking circle pattern|
+
 
 ---
 
