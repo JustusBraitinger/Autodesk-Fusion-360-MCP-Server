@@ -22,10 +22,8 @@ mcp = FastMCP("Fusion",
                 1. Profil erstellen (Kreis/Rechteck/Linien) in der angegebenen Plane
                 2. Spline für Sweep-Pfad in der angegebenen Plane zeichnen
                 3. Sweep ausführen
+                UND dass das profil am Anfang des Splines liegt! Es muss verbunden sein!
 
-                PLANE-ACHTUNG:
-                - Profil und Spline müssen in UNTERSCHIEDLICHEN Planes sein!
-                - Normalerweise: Profil in YZ, Spline in XY
 - Immer die Planes beachten, die der Nutzer angibt!             
               """)
 
@@ -94,6 +92,7 @@ def spline(points : list, plane : str):
     Wenn nicht explizit danach gefragt ist mache es so, dass die Linien nach oben zeigen
     Du kannst die Ebene als String übergeben
     Es ist essenziell, dass die linien eine andere ebene haben als das profil was du sweepen willst
+    Falls du davor ein kreis für sweep gemacht hast bitte bau in der gleichen ebene die spline außer anders gesagt
     Beispiel: "XY", "YZ", "XZ"
     """
     url = "http://localhost:5000/spline"
@@ -196,6 +195,17 @@ def draw_box(height_value:str, width_value:str, depth_value:str, x_value:float, 
     Ganz wichtg 10 ist 100mm in Fusion 360
     Du kannst die Ebene als String übergeben
     Depth ist die eigentliche höhe in z Richtung
+    Ein in der Luft schwebende Box machst du so: 
+    {
+    `plane`: `XY`,
+    `x_value`: 5,
+    `y_value`: 5,
+    `z_value`: 20,
+    `depth_value`: `2`,
+    `width_value`: `5`,
+    `height_value`: `3`
+    }
+    Das kannst du beliebig anpassen
 
     Beispiel: "XY", "YZ", "XZ"
     """
@@ -281,8 +291,19 @@ def extrude_thin(thickness :float):
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 
-
-
+@mcp.tool()
+def cut_extrude(depth :float):
+    """
+    Du kannst die Tiefe des Schnitts als Float übergeben
+    :param depth: Die Tiefe des Schnitts in mm
+    depth muss negativ sein ganz wichtig!
+    """
+    url = "http://localhost:5000/cut_extrude"
+    data = {
+        "depth": depth
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
 
 @mcp.tool()
 def revolve(angle : float):
@@ -341,7 +362,36 @@ def draw_one_line(x1: float, y1: float, z1: float, x2: float, y2: float, z2: flo
     return response.json()
 
 @mcp.tool()
-def draw2Dcirle(radius : float, x:float, y:float, plane:str="XY"):
+def circular_pattern(plane: str, quantity: float, axis: str):
+    """
+    Du kannst ein Circular Pattern (Kreismuster) erstellen um Objekte kreisförmig um eine Achse zu verteilen.
+    Du übergibst die Anzahl der Kopien als Float, die Achse als String ("X", "Y" oder "Z") und die Ebene als String ("XY", "YZ" oder "XZ").
+
+    Die Achse gibt an, um welche Achse rotiert wird.
+    Die Ebene gibt an, in welcher Ebene das Muster verteilt wird.
+
+    Beispiel: 
+    - quantity: 6.0 erstellt 6 Kopien gleichmäßig um 360° verteilt
+    - axis: "Z" rotiert um die Z-Achse
+    - plane: "XY" verteilt die Objekte in der XY-Ebene
+
+    Das Feature wird auf das zuletzt erstellte/ausgewählte Objekt angewendet.
+    Typische Anwendungen: Schraubenlöcher in Kreisform, Zahnrad-Zähne, Lüftungsgitter, dekorative Muster.
+    """
+    url = "http://localhost:5000/circular_pattern"
+    data = {
+        "plane": plane,
+        "quantity": quantity,
+        "axis": axis
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
+
+
+
+
+@mcp.tool()
+def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY"):
     """
     Zeichne einen Kreis in Fusion 360
     Du kannst den Radius als Float übergeben
@@ -353,14 +403,24 @@ def draw2Dcirle(radius : float, x:float, y:float, plane:str="XY"):
         "radius":5,
         "x":0,
         "y":0,
+        "z":0,
         "plane":"XY"
     }
+    Einen kreis in der Luft machst du zum beispiel so so : 
+    {
+  `x`: 0,
+  `y`: 0,
+  `z`: 10,
+  `plane`: `XY`,
+  `radius`: 2
+}
     """
     url = "http://localhost:5000/create_circle"
     data = {
         "radius": radius,
         "x": x,
         "y": y,
+        "z": z,
         "plane": plane
     }
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
@@ -421,6 +481,36 @@ def magnet():
     """
     return mcp_prompt
 
+@mcp.prompt()
+def dna():
+    prompt = """
+    Erstelle eine DNA-Doppelhelix in Fusion 360 mit folgenden exakten Spezifikationen:
+
+    **Geometrische Parameter:**
+    - Höhe: 50cm (50 Einheiten in Z-Richtung)
+    - Strangdurchmesser: 10mm (Radius 0.5 Einheiten)
+    - Abstand zwischen Strängen: 60mm (Mittelpunkt zu Mittelpunkt = 6 Einheiten, also Radius 3)
+    - Windungen: 2 vollständige Umdrehungen (720°)
+    - Punkte pro Spline: 9 (für Balance zwischen Glätte und Performance)
+
+    **Konstruktionsablauf:**
+
+    **Strang 1:**
+    1. 2D-Kreis in XY-Ebene: x=3, y=0, z=0, radius=0.5
+    2. Spline in XY-Ebene mit Punkten: [[3,0,0], [2.121,2.121,6.25], [0,3,12.5], [-2.121,2.121,18.75], [-3,0,25], [-2.121,-2.121,31.25], [0,-3,37.5], [2.121,-2.121,43.75], [3,0,50]]
+    3. Sweep ausführen
+
+    **Strang 2 (180° versetzt):**
+    1. 2D-Kreis in XY-Ebene: x=-3, y=0, z=0, radius=0.5
+    2. Spline in XY-Ebene mit Punkten: [[-3,0,0], [-2.121,-2.121,6.25], [0,-3,12.5], [2.121,-2.121,18.75], [3,0,25], [2.121,2.121,31.25], [0,3,37.5], [-2.121,2.121,43.75], [-3,0,50]]
+    3. Sweep ausführen
+
+    **Wichtig:** 
+    - Alle Kreise UND Splines in XY-Ebene erstellen falls es andersrum sein sollte musst du es halt anpassen
+    - Kreis-Profil muss am Anfangspunkt der Spline liegen
+    - 1 Fusion-Einheit = 1cm = 10mm
+        """    
+    return prompt
  
 
 if __name__ == "__main__":
