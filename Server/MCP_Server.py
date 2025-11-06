@@ -38,7 +38,7 @@ def draw_holes(points : list,depth : float, width : float,faceindex : int = 0):
     Übergebe zusätzlich die Tiefe und den Durchmesser der Bohrung
     Du machst im Moment  nur Counterbore holes
     Du brauchs den faceindex damit Fusion weiß auf welcher Fläche die Bohrung gemacht werden soll
-    wenn du einen keris extrudierst ist die oberste Fläche meistens faceindex 0 untere fläche 1
+    wenn du einen keris extrudierst ist die oberste Fläche meistens faceindex 1 untere fläche 2
     Die punkte müssen so sein, dass sie nicht außerhalb des Körpers liegen
     BSP:
     2,1mm tief = depth: 0.21
@@ -522,3 +522,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     mcp.run(transport=args.server_type)
+
