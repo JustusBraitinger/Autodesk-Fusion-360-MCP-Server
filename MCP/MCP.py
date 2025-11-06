@@ -502,9 +502,14 @@ def circular_pattern(design, ui, quantity, axis, plane):
         rootComp = design.rootComponent
         sketches = rootComp.sketches
         circularFeats = rootComp.features.circularPatternFeatures
-        body = rootComp.bRepBodies.item(0)
+        bodies = rootComp.bRepBodies
+
+        if bodies.count > 0:
+            latest_body = bodies.item(bodies.count - 1)
+        else:
+            ui.messageBox("Keine Bodies gefunden.")
         inputEntites = adsk.core.ObjectCollection.create()
-        inputEntites.add(body)
+        inputEntites.add(latest_body)
         if plane == "XY":
             sketch = sketches.add(rootComp.xYConstructionPlane)
         elif plane == "XZ":
