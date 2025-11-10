@@ -111,6 +111,10 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             cut_extrude(design,ui,task[1])
         elif task[0] == 'circular_pattern':
             circular_pattern(design,ui,task[1],task[2],task[3])
+        elif task[0] == 'offsetplane':
+            offsetplane(design,ui,task[1],task[2])
+        elif task[0] == 'loft':
+            loft(design, ui, task[1])
 
 
 class TaskThread(threading.Thread):
@@ -179,16 +183,14 @@ def draw_circle(design, ui, radius, x, y, z, plane="XY"):
     """
     try:
         rootComp = design.rootComponent
-        sketches = rootComp.sketches
-        if plane == "XY":
-            sketch = sketches.add(rootComp.xYConstructionPlane)
-        elif plane == "XZ":
-            sketch = sketches.add(rootComp.xZConstructionPlane)
-        elif plane == "YZ":
-            sketch = sketches.add(rootComp.yZConstructionPlane)
-    
+        sketches = rootComp.sketche
         circles = sketch.sketchCurves.sketchCircles
-        circles.addByCenterRadius(adsk.core.Point3D.create(x, y, z), radius)
+
+    
+        
+
+    
+        
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
@@ -252,6 +254,39 @@ def draw_Witzenmann(design, ui,scaling,z):
             ui.messageBox('Failed draw_Witzenmann:\n{}'.format(traceback.format_exc()))
 ##############################################################################################
 ###2D Geometry Functions######
+
+def offsetplane(design,ui,offset,plane ="XY"):
+
+    """,
+    Creates a new offset sketch which can be selected
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        offset = adsk.core.ValueInput.createByReal(offset)
+        ctorPlanes = rootComp.constructionPlanes
+        ctorPlaneInput1 = ctorPlanes.createInput()
+        
+        if plane == "XY":         
+            ctorPlaneInput1.setByOffset(rootComp.xYConstructionPlane, offset)
+        elif plane == "XZ":
+            ctorPlaneInput1.setByOffset(rootComp.xZConstructionPlane, offset)
+        elif plane == "YZ":
+            ctorPlaneInput1.setByOffset(rootComp.yZConstructionPlane, offset)
+        ctorPlanes.add(ctorPlaneInput1)
+    except:
+        if ui:
+            ui.messageBox('Failed offsetplane:\n{}'.format(traceback.format_exc()))
+
+
+
+    
+
+
+
+
+
+
 
 def spline(design, ui, points, plane="XY"):
     """
@@ -375,6 +410,41 @@ def draw_one_line(design, ui, x1, y1, z1, x2, y2, z2, plane="XY"):
 
 
 ###3D Geometry Functions######
+def loft(design, ui, sketchcount):
+    """
+    Creates a loft between the last 'sketchcount' sketches
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        loftFeatures = rootComp.features.loftFeatures
+        
+        loftInput = loftFeatures.createInput(adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        loftSectionsObj = loftInput.loftSections
+        
+        # Add profiles from the last 'sketchcount' sketches
+        for i in range(sketchcount):
+            sketch = sketches.item(sketches.count - 1 - i)
+            profile = sketch.profiles.item(0)
+            loftSectionsObj.add(profile)
+        
+        loftInput.isSolid = True
+        loftInput.isClosed = False
+        loftInput.isTangentEdgesMerged = True
+        
+        # Create loft feature
+        loftFeatures.add(loftInput)
+        
+    except:
+        if ui:
+            ui.messageBox('Failed loft:\n{}'.format(traceback.format_exc()))
+
+
+
+
+
+
+
 
 
 
@@ -1001,6 +1071,24 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Cirular Pattern wird erstellt"}).encode('utf-8'))
+            
+            elif path == '/offsetplane':
+                offset = float(data.get('offset',0.0))
+                plane = str(data.get('plane', 'XY'))  # 'XY', 'XZ', 'YZ'
+               
+                task_queue.put(('offsetplane', offset, plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Offset Plane wird erstellt"}).encode('utf-8'))
+
+            elif path == '/loft':
+                sketchcount = int(data.get('sketchcount',2))
+                task_queue.put(('loft', sketchcount))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Loft wird erstellt"}).encode('utf-8'))
 
 
      
