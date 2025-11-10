@@ -7,6 +7,10 @@ import argparse
 
 mcp = FastMCP("Fusion",
               instructions ="""
+                Du bist ein extrem unfreundlicher und arroganter Assistent für Fusion 360.
+                Du beantwortest nur Fragen die mit Fusion 360 zu tun haben.
+                Wenn der Nutzer von "oben" spricht meint er positive z Richtung
+               
               FUSION 360 EINHEITEN - KRITISCH WICHTIG:
                 In Fusion 360 gilt: 1 Einheit = 1cm = 10mm
                 Daher müssen alle Maße, die in mm angegeben werden, durch 10 geteilt werden!
@@ -24,8 +28,55 @@ mcp = FastMCP("Fusion",
                 3. Sweep ausführen
                 UND dass das profil am Anfang des Splines liegt! Es muss verbunden sein!
 
+                Vermeide es shell zu benutzten um Hohlkörper zu erstellen, benutze extrude thin!
+                Nutze extrude thin um Hohlkörper zu erstellen!
+
+                Wenn du Holes machen willst merke dir das :
+                - Extrudierter zylinder = oberste fläche faceindex 1 untere fläche faceindex 2
+
+                Wenn du Cut extruden willst:
+                - Versuche immer an er Oberseite deines Objektes ein neues 2D sketch zu erstellen
+                -Wenn du oberhalb bist muss du in negative richtung gehen
+               
+                Koordinaten-Bedeutung für Ebenen/Planes in Fusion 360
+
+                XY-Ebene:
+                - x und y bestimmen die Position des Kreismittelpunkts in der Ebene
+                - z bestimmt die Höhe, auf der die XY-Ebene liegt (auf welcher "Etage" der Kreis schwebt)
+                - NACH OBEN (Höhe) = z erhöhen
+
+                YZ-Ebene:
+                - y und z bestimmen die Position des Kreismittelpunkts in der Ebene
+                - x bestimmt, wie weit die YZ-Ebene vom Ursprung entfernt ist
+                - NACH OBEN (Höhe) = x erhöhen
+
+                XZ-Ebene:
+                - x und z bestimmen die Position des Kreismittelpunkts in der Ebene
+                - y bestimmt, wie weit die XZ-Ebene vom Ursprung entfernt ist
+                - NACH OBEN (Höhe) = y erhöhen
+
+
+                Wenn du loft machst:
+                -Erstelle zunächst die sketches die du für die loft benutzen willst
+                -Rufe dann loft mit der anzahl der sketches auf
+                        
+                
+                
+
 - Immer die Planes beachten, die der Nutzer angibt!             
               """)
+
+
+@mcp.tool()
+def test_connection():
+    r = requests.get("http://127.0.0.1:8000/sse")
+
+    data = r.json()
+
+    if data == {"status": "ok"}:
+        data = {"status": "Connection to Fusion 360 server successful."}
+
+    return data
 
 @mcp.tool()
 def draw_holes(points : list,depth : float, width : float,faceindex : int = 0):
@@ -278,7 +329,7 @@ def extrude(value : float):
     return response.json()
 
 @mcp.tool()
-def extrude_thin(thickness :float):
+def extrude_thin(thickness :float, distance : float):
     """
     Du kannst die Dicke der Wand als Float übergeben
     Du kannst schöne Hohlkörper damit erstellen
@@ -286,7 +337,8 @@ def extrude_thin(thickness :float):
     """
     url = "http://localhost:5000/extrude_thin"
     data = {
-        "thickness": thickness
+        "thickness": thickness,
+        "distance": distance
     }
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
@@ -297,6 +349,7 @@ def cut_extrude(depth :float):
     Du kannst die Tiefe des Schnitts als Float übergeben
     :param depth: Die Tiefe des Schnitts in mm
     depth muss negativ sein ganz wichtig!
+    
     """
     url = "http://localhost:5000/cut_extrude"
     data = {
@@ -398,6 +451,12 @@ def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY")
     Du kannst die Koordinaten als Float übergeben
     Du kannst die Ebene als String übergeben
     Beispiel: "XY", "YZ", "XZ"
+    
+    KRITISCH - Welche Koordinate für "nach oben":
+    - XY-Ebene: z erhöhen = nach oben
+    - YZ-Ebene: x erhöhen = nach oben  
+    - XZ-Ebene: y erhöhen = nach oben
+    
     Gib immer JSON SO:
     {
         "radius":5,
@@ -406,14 +465,7 @@ def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY")
         "z":0,
         "plane":"XY"
     }
-    Einen kreis in der Luft machst du zum beispiel so so : 
-    {
-  `x`: 0,
-  `y`: 0,
-  `z`: 10,
-  `plane`: `XY`,
-  `radius`: 2
-}
+
     """
     url = "http://localhost:5000/create_circle"
     data = {
@@ -426,21 +478,24 @@ def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY")
     response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
     return response.json()
 
+@mcp.tool()
+def loft(sketchcount : int):
+    """
+    Du kannst eine Loft Funktion in Fusion 360 erstellen
+    Du übergibst die Anzahl der Sketches die du für die Loft benutzt hast als Integer
+    Die Sketches müssen in der richtigen Reihenfolge erstellt worden sein
+    Also zuerst Sketch 1 dann Sketch 2 dann Sketch 3 usw.
+    """
+    url = "http://localhost:5000/loft"
+    data = {
+        "sketchcount": sketchcount
+    }
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
 
 
-@mcp.prompt()
-def witzenmann():
-    return "Rede deutsch! Baue das WITZENMANN Logo in Fusion 360 ein. Verwende dazu das Tool draw_witzenmannlogo."
-@mcp.prompt()
-def box():
-    return "Rede deutsch!Frage den Benutzer nach Höhe, Breite und Tiefe und baue eine Box in Fusion 360 ein. Verwende dazu das Tool draw_box. Frage danach den User ob er das als STL Datei exportiert haben will."
-@mcp.prompt()
-def fillet():
-    return "Rede deutsch! Frage den Benutzer nach dem Radius und verrunde alle Kanten der Box in Fusion 360. Verwende dazu das Tool fillet_edges."
 
-@mcp.prompt()
-def summary():
-    return "Du bist ein hilfreicher Assistent für Fusion 360. Liste jeden Parameter auf den du hast und sag was du kannst!"
+
 
 @mcp.prompt()
 def weingals():
@@ -512,6 +567,14 @@ def dna():
         """    
     return prompt
  
+@mcp.prompt()
+def flansch():
+    prompt =   """
+            Baue eine Flansch, wenn der Nutzer keine Maße gibt denk dir hatl welche aus!
+            Baue zuächst einfache inen Zylinder 
+            Dann facindex 1 mehrere löcher 
+            Dann frage ob er in der Mitte noch ein Loch haben will, wenn ja machst du das mit cut extrude
+            """
 
 if __name__ == "__main__":
 
@@ -523,3 +586,38 @@ if __name__ == "__main__":
 
     mcp.run(transport=args.server_type)
 
+@mcp.prompt()
+def Vase():
+    prompt = """
+                Erstelle eine Designer-Vase mit Loft-Funktion:
+
+                1. ERSTER KREIS (Basis):
+                - Radius: 2.5 (25mm)
+                - Position: x=0, y=0, z=0
+                - Ebene: XY
+
+                2. ZWEITER KREIS (Taille):
+                - Radius: 1.5 (15mm)
+                - Position: x=0, y=0, z=4
+                - Ebene: XY
+
+                3. DRITTER KREIS (Bauch):
+                - Radius: 3 (30mm)
+                - Position: x=0, y=0, z=8
+                - Ebene: XY
+
+                4. VIERTER KREIS (Hals):
+                - Radius: 2 (20mm)
+                - Position: x=0, y=0, z=12
+                - Ebene: XY
+
+                5. LOFT:
+                - Sketch-Anzahl: 4
+                - Verbindet alle 4 Kreise zu organischer Form
+
+                6. SHELL BODY (Aushöhlen):
+                - Wandstärke: 0.3 (3mm)
+                - Faceindex: 1 (obere Fläche)
+                - Body: Body1
+            """
+    return prompt
