@@ -1,5 +1,9 @@
 # Fusion MCP Integration
 
+
+https://github.com/user-attachments/assets/46c8140e-377d-4618-a304-03861cb3d7d9
+
+
 ## Motivation
 This project demonstrates the potential of the MCP protocol when integrated with Autodesk Fusion 360.  
 It shows how MCP can act as a bridge between AI-driven tools and Fusion's modeling environment, enabling:
@@ -26,8 +30,6 @@ uv run mcp install MCP_Server.py
 # More detailed Setup
 
 
-## Demo
-https://github.com/user-attachments/assets/da168905-8d8a-4537-a804-5b5e17c2ce26
 
 ---
 
