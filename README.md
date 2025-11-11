@@ -217,3 +217,6 @@ Fusion API limitations:
 - Documentation outdated in places
 
 **This is a proof-of-concept, not production software.**
+
+## Contact
+brju1032@h-ka.de
