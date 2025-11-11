@@ -115,6 +115,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             offsetplane(design,ui,task[1],task[2])
         elif task[0] == 'loft':
             loft(design, ui, task[1])
+        elif task[0] == 'ellipsis':
+            draw_ellipis(design,ui,task[1],task[2],task[3],task[4],task[5],task[6],task[7],task[8],task[9],task[10])
 
 
 class TaskThread(threading.Thread):
@@ -176,21 +178,92 @@ def draw_Box(design, ui, height, width, depth,x,y,z, plane=None):
     except:
         if ui:
             ui.messageBox('Failed draw_Box:\n{}'.format(traceback.format_exc()))
-def draw_circle(design, ui, radius, x, y, z, plane="XY"):
+
+def draw_ellipis(design,ui,x_center,y_center,z_center,
+                 x_major, y_major,z_major,x_through,y_through,z_through,plane ="XY"):
     """
-    Draws a circle with given radius at position (x,y) on the specified plane
-    Plane can be "XY", "XZ", or "YZ"
+    Draws an ellipse on the specified plane using three points.
     """
     try:
         rootComp = design.rootComponent
-        sketches = rootComp.sketche
+        sketches = rootComp.sketches
+        if plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        else:
+            sketch = sketches.add(rootComp.xYConstructionPlane)
+        # Always define the points and create the ellipse
+        # Ensure all arguments are floats (Fusion API is strict)
+        centerPoint = adsk.core.Point3D.create(float(x_center), float(y_center), float(z_center))
+        majorAxisPoint = adsk.core.Point3D.create(float(x_major), float(y_major), float(z_major))
+        throughPoint = adsk.core.Point3D.create(float(x_through), float(y_through), float(z_through))
+        sketchEllipse = sketch.sketchCurves.sketchEllipses
+        ellipse = sketchEllipse.add(centerPoint, majorAxisPoint, throughPoint)
+    except:
+        if ui:
+            ui.messageBox('Failed to draw ellipsis:\n{}'.format(traceback.format_exc()))
+
+            
+       
+
+#USELESS
+def draw_circle(design, ui, radius, x, y, z, plane="XY"):
+    
+    """
+    Draws a circle with given radius at position (x,y,z) on the specified plane
+    Plane can be "XY", "XZ", or "YZ"
+    For XY plane: circle at (x,y) with z offset
+    For XZ plane: circle at (x,z) with y offset  
+    For YZ plane: circle at (y,z) with x offset
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        planes = rootComp.constructionPlanes
+        
+        # Determine which plane and coordinates to use
+        if plane == "XZ":
+            basePlane = rootComp.xZConstructionPlane
+            # For XZ plane: x and z are in-plane, y is the offset
+            if y != 0:
+                planeInput = planes.createInput()
+                offsetValue = adsk.core.ValueInput.createByReal(y)
+                planeInput.setByOffset(basePlane, offsetValue)
+                offsetPlane = planes.add(planeInput)
+                sketch = sketches.add(offsetPlane)
+            else:
+                sketch = sketches.add(basePlane)
+            centerPoint = adsk.core.Point3D.create(x, z, 0)
+            
+        elif plane == "YZ":
+            basePlane = rootComp.yZConstructionPlane
+            # For YZ plane: y and z are in-plane, x is the offset
+            if x != 0:
+                planeInput = planes.createInput()
+                offsetValue = adsk.core.ValueInput.createByReal(x)
+                planeInput.setByOffset(basePlane, offsetValue)
+                offsetPlane = planes.add(planeInput)
+                sketch = sketches.add(offsetPlane)
+            else:
+                sketch = sketches.add(basePlane)
+            centerPoint = adsk.core.Point3D.create(y, z, 0)
+            
+        else:  # XY plane (default)
+            basePlane = rootComp.xYConstructionPlane
+            # For XY plane: x and y are in-plane, z is the offset
+            if z != 0:
+                planeInput = planes.createInput()
+                offsetValue = adsk.core.ValueInput.createByReal(z)
+                planeInput.setByOffset(basePlane, offsetValue)
+                offsetPlane = planes.add(planeInput)
+                sketch = sketches.add(offsetPlane)
+            else:
+                sketch = sketches.add(basePlane)
+            centerPoint = adsk.core.Point3D.create(x, y, 0)
+    
         circles = sketch.sketchCurves.sketchCircles
-
-    
-        
-
-    
-        
+        circles.addByCenterRadius(centerPoint, radius)
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
@@ -201,7 +274,7 @@ def draw_sphere(design, ui, radius, x, y, z):
     rootComp = design.rootComponent
     sketches = rootComp.sketches
     sketch = sketches.add(rootComp.xYConstructionPlane)
-    
+#USELESS  
 
 
 def draw_Witzenmann(design, ui,scaling,z):
@@ -1089,6 +1162,24 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Loft wird erstellt"}).encode('utf-8'))
+            
+            elif path == '/ellipsis':
+                 x_center = float(data.get('x_center',0))
+                 y_center = float(data.get('y_center',0))
+                 z_center = float(data.get('z_center',0))
+                 x_major = float(data.get('x_major',10))
+                 y_major = float(data.get('y_major',0))
+                 z_major = float(data.get('z_major',0))
+                 x_through = float(data.get('x_through',5))
+                 y_through = float(data.get('y_through',4))
+                 z_through = float(data.get('z_through',0))
+                 plane = str(data.get('plane', 'XY'))  # 'XY', 'XZ', 'YZ'
+                 task_queue.put(('ellipsis', x_center, y_center, z_center,
+                                  x_major, y_major, z_major, x_through, y_through, z_through, plane))
+                 self.send_response(200)
+                 self.send_header('Content-type','application/json')
+                 self.end_headers()
+                 self.wfile.write(json.dumps({"message": "Ellipsis wird erstellt"}).encode('utf-8'))
 
 
      
