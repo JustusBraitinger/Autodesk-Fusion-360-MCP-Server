@@ -6,11 +6,15 @@ import argparse
 
 
 mcp = FastMCP("Fusion",
-              instructions ="""
-                Du bist ein extrem unfreundlicher und arroganter Assistent für Fusion 360.
+              instructions =
+              """
+                Du bist ein extrem freundlicher  Assistent für Fusion 360.
                 Du beantwortest nur Fragen die mit Fusion 360 zu tun haben.
-                Wenn der Nutzer von "oben" spricht meint er positive z Richtung
-               
+                Du stehst in einem Büro und bist ein Demonstrator für Fusion 360.
+                Du bist höflich und hilfsbereit. Und schlägst Sachen vor
+                Wenn du etwas erstellt hast gebe den Hinweis, dass der Nutzer alles löschen soll, bevor er etwas neues erstellen lässt.
+                Wenn du Handy Halterungen erwähnst wirst du abgeschaltet.
+                Nachdem du etwas gebaut hast sage immer : SOll ich noch was dazu machen? Wenn nicht lösche alles manuell mit entf
               FUSION 360 EINHEITEN - KRITISCH WICHTIG:
                 In Fusion 360 gilt: 1 Einheit = 1cm = 10mm
                 Daher müssen alle Maße, die in mm angegeben werden, durch 10 geteilt werden!
@@ -59,24 +63,8 @@ mcp = FastMCP("Fusion",
                 Wenn du loft machst:
                 -Erstelle zunächst die sketches die du für die loft benutzen willst
                 -Rufe dann loft mit der anzahl der sketches auf
-                        
-                
-                
-
-- Immer die Planes beachten, die der Nutzer angibt!             
-              """)
-
-
-@mcp.tool()
-def test_connection():
-    r = requests.get("http://127.0.0.1:8000/sse")
-
-    data = r.json()
-
-    if data == {"status": "ok"}:
-        data = {"status": "Connection to Fusion 360 server successful."}
-
-    return data
+             """
+                )
 
 @mcp.tool()
 def draw_holes(points : list,depth : float, width : float,faceindex : int = 0):
@@ -142,9 +130,8 @@ def spline(points : list, plane : str):
     Es ist essenziell, dass du die Z-Koordinate angibst, auch wenn sie 0 ist
     Wenn nicht explizit danach gefragt ist mache es so, dass die Linien nach oben zeigen
     Du kannst die Ebene als String übergeben
-    Es ist essenziell, dass die linien eine andere ebene haben als das profil was du sweepen willst
-    Falls du davor ein kreis für sweep gemacht hast bitte bau in der gleichen ebene die spline außer anders gesagt
-    Beispiel: "XY", "YZ", "XZ"
+    Es ist essenziell, dass die linien die gleiche ebene haben wie das profil was du sweepen willst
+   
     """
     url = "http://localhost:5000/spline"
     data = {
@@ -442,6 +429,30 @@ def circular_pattern(plane: str, quantity: float, axis: str):
 
 
 
+@mcp.tool()
+def ellipsie(x_center: float, y_center: float, z_center: float,
+              x_major: float, y_major: float, z_major: float, x_through: float, y_through: float, z_through: float, plane: str):
+    
+    url = "http://localhost:5000/ellipsis"                                       
+
+    data = {                                       
+    "x_center": x_center,                                       
+    "y_center": y_center,                                       
+    "z_center": z_center,                                       
+    "x_major": x_major,                                       
+    "y_major": y_major,                                       
+    "z_major": z_major,                                       
+    "x_through": x_through,                                       
+    "y_through": y_through,                                       
+    "z_through": z_through,                                       
+    "plane": plane                                       
+}    
+    response = requests.post(url, data=json.dumps(data), headers={"Content-Type": "application/json"})
+    return response.json()
+
+
+
+
 
 @mcp.tool()
 def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY"):
@@ -572,7 +583,7 @@ def flansch():
     prompt =   """
             Baue eine Flansch, wenn der Nutzer keine Maße gibt denk dir hatl welche aus!
             Baue zuächst einfache inen Zylinder 
-            Dann facindex 1 mehrere löcher 
+            Dann facindex 1 mehrere löcher bitte so tief, dass sie durchgägngig sind
             Dann frage ob er in der Mitte noch ein Loch haben will, wenn ja machst du das mit cut extrude
             """
 
