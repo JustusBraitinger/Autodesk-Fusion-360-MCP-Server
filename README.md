@@ -186,6 +186,7 @@ Now you will see a list of predetermined Prompts.
 | Thin extrusion | Thin wall extrusion |
 | Cut extrude | Makes hole with sketch|
 | Circular pattern| fucking circle pattern|
+| Ellipsie | Creates Ellipsie|
 
 
 ---
