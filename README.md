@@ -37,11 +37,15 @@ It shows how MCP can act as a bridge between AI-driven tools and Fusion's modeli
 git clone https://github.com/JustusBraitinger/FusionMCP
 ```
 ## Add Add-in to Fusion
-1. Open Fusion 360
-2. Go to **Utilities → Add-ins**
-3. Click the **+** button
-4. Select the **MCP** folder from this repository, you will probably find it under C:\Users\FusionMCMP
-5. **Do NOT start the add-in yet**
+
+1. Take the MCP folder and put it in the AddinFolder from Fusion
+2. You can find it under User/Appdata/Roaming/AutodeskFusion360/API/Addin
+3. Delete the MCP folder from the FusionMCP folder
+4. Open Fusion 360
+6. Go to **Utilities → Add-ins**
+7. Click the **+** button
+8. Select the **MCP** folder from this repository, you will probably find it under C:\Users\FusionMCMP
+9. **Do NOT start the add-in yet**
 
 
 ## Install Python Dependencies
