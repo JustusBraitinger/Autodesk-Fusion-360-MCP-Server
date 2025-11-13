@@ -171,28 +171,21 @@ Now you will see a list of predetermined Prompts.
 
 ## 🛠️ Available Tools
 
-This tool palette is organized into logical categories to facilitate 3D modeling and analysis.
-
----
-
-### 📏 Analysis & Model Information
-
-| Tool | Description |
-| :--- | :--- |
-| **Count parameters** | Counts the total number of all **model parameters**. |
-| **List parameters** | Lists all defined **model parameters** in detail. |
-
 ---
 
 ### ✏️ Sketching & Creation Tools
 
 | Tool | Description |
 | :--- | :--- |
-| **Draw lines** | Creates a **polyline** (multiple connected lines) as a sketch. |
-| **3-Point Arc** | Draws a **circular arc** based on three defined points. |
+| **Draw 2D circle** | Draws a 2D **circle** at a specified position and plane. |
 | **Ellipsie** | Generates an **ellipse** (elliptical curve) in the sketching plane. |
-| **Draw box** | Creates a **box** (solid body) with definable height, width, and length, plus position. |
+| **Draw lines** | Creates a **polyline** (multiple connected lines) as a sketch. |
+| **Draw one line** | Draws a single line between two 3D points. |
+| **3-Point Arc** | Draws a **circular arc** based on three defined points. |
+| **Spline** | Draws a **Spline curve** through a list of 3D points (used for sweep path). |
+| **Draw box** | Creates a **box** (solid body) with definable dimensions and position. |
 | **Draw cylinder** | Draws a **cylinder** (solid body). |
+| **Draw Witzenmann logo** | A **fun demo function** for creating the Witzenmann logo. |
 
 ---
 
@@ -200,23 +193,40 @@ This tool palette is organized into logical categories to facilitate 3D modeling
 
 | Tool | Description |
 | :--- | :--- |
+| **Extrude** | **Extrudes** the last active sketch by a given value to create a body. |
 | **Revolve** | Creates a revolved body by **revolving** a profile around an axis. |
-| **Sweep** | Extrudes a profile (e.g., circle) along a **spline path** (sweep). |
+| **Sweep** | Executes a sweep feature using the previously created profile and spline path. |
+| **Loft** | Creates a complex body by **lofting** between a defined number of previously created sketches. |
 | **Thin extrusion** | Creates a **thin-walled extrusion** (extrusion with constant wall thickness). |
 | **Cut extrude** | Removes material from a body by **cutting** a sketch (as a hole/pocket). |
+| **Draw holes** | Creates **Counterbore holes** at specified points on a surface (`faceindex`). |
 | **Fillet edges** | Rounds sharp edges with a defined **radius** (fillet). |
 | **Shell body** | **Hollows** out the body, leaving a uniform wall thickness. |
+| **Circular pattern** | Creates a **circular pattern** (array) of features or bodies around an axis. |
+
 
 ---
 
-### 🔄 Patterning & Miscellaneous
+### 📏 Analysis & Control
 
 | Tool | Description |
 | :--- | :--- |
-| **Circular pattern** | Creates a **circular pattern** (array) of features or bodies. |
-| **Undo** | **Undoes** the last operation. |
-| **Export** | **Exports** the model in common formats like **STL** or **STEP**. |
-| **Draw Witzenmann logo** | A **fun demo function** for creating the Witzenmann logo. |
+| **Count** | Counts the total number of all **model parameters**. |
+| **List parameters** | Lists all defined **model parameters** in detail. |
+| **Change parameter** | Changes the value of an existing named parameter in the model. |
+| **Test connection** | Tests the communication link to the Fusion 360 server. |
+| **Undo** | **Undoes** the last operation in Fusion 360. |
+| **Delete all** | **Deletes all objects** in the current Fusion 360 session (`destroy`). |
+
+---
+
+### 💾 Export
+
+| Tool | Description |
+| :--- | :--- |
+| **Export STEP** | **Exports** the model as a **STEP** file. |
+| **Export STL** | **Exports** the model as an **STL** file. |
+
 
 ## Architecture
 
