@@ -14,20 +14,9 @@ It shows how MCP can act as a bridge between AI-driven tools and Fusion's modeli
 > **Goal:** Enable conversational CAD and AI-driven automation in Fusion.
 
 ---
-# Quickstart with Claude 
 
-```bash
-git clone https://github.com/JustusBraitinger/FusionMCP
-cd FusionMCP/Server
-python -m venv venv
-.\venv\Scripts\Activate   # or source venv/bin/activate
-pip install -r requirements.txt
-pip install "mcp[cli]"
-cd FusionMCP
-uv run mcp install MCP_Server.py
-```
 
-# More detailed Setup
+# Setup
 
 **I highly recommend to do everything inside Visual Studio Code or an other IDE**
 
