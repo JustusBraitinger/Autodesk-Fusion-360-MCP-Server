@@ -29,7 +29,7 @@ uv run mcp install MCP_Server.py
 
 # More detailed Setup
 
-
+**I highly recommend to do everything inside Visual Studio Code or an other IDE**
 
 ---
 
@@ -46,18 +46,18 @@ uv run mcp install MCP_Server.py
 ## Clone Repository
 ```bash
 git clone https://github.com/JustusBraitinger/FusionMCP
-cd FusionMCP
 ```
-
 ## Add Add-in to Fusion
 1. Open Fusion 360
 2. Go to **Utilities → Add-ins**
 3. Click the **+** button
-4. Select the **MCP** folder from this repository
+4. Select the **MCP** folder from this repository, you will probably find it under C:\Users\FusionMCMP
 5. **Do NOT start the add-in yet**
+
 
 ## Install Python Dependencies
 ```bash
+cd FusionMCP
 cd Server
 python -m venv venv
 ```
@@ -69,11 +69,6 @@ python -m venv venv
 .\venv\Scripts\Activate
 ```
 
-**macOS / Linux**
-```bash
-source venv/bin/activate
-```
-
 ### Install packages
 ```bash
 pip install -r requirements.txt
@@ -83,6 +78,18 @@ pip install "mcp[cli]"
 ---
 
 ## Connect to Claude
+The most simple way to add the MCP-Server to Claude Desktop is to run following command:  
+```bash
+uv run mcp install MCP_Server.py
+```
+The output should be like this:    
+
+```bash
+[11/13/25 08:42:37] INFO     Added server 'Fusion' to Claude config
+                    INFO     Successfully installed Fusion in Claude app                                                                                                                                                               
+```
+
+# Alternative
 
 ### Modify Claude Config
 In Claude Desktop go to:  
@@ -106,10 +113,6 @@ Add this block (change the path for your system):
 ```
 > **Note:** Windows paths require double backslashes `\\`
 
-**Alternative install command**
-```bash
-uv run mcp install MCP_Server.py
-```
 
 ### Using the MCP in Claude
 1. Restart Claude if needed (force close if not visible)
@@ -166,30 +169,54 @@ Now you will see a list of predetermined Prompts.
 
 ---
 
-## Available Tools 🧰
+## 🛠️ Available Tools
 
-| Tool | Description |
-|------|-------------|
-| Count parameters | Counts all model parameters |
-| List parameters | Lists model parameters |
-| Draw box | Create a box with H/W/L and position |
-| Draw cylinder | Draws cylinder |
-| Draw Witzenmann logo | Fun demo |
-| Fillet edges | Fillet edges by radius |
-| Shell body | Hollow body |
-| Export | Export STL/STEP |
-| Undo | Undo last operation |
-| Draw lines | Polyline sketch |
-| 3-Point Arc | Arc tool |
-| Revolve | Revolves profile |
-| Sweep | Circle + spline sweep |
-| Thin extrusion | Thin wall extrusion |
-| Cut extrude | Makes hole with sketch|
-| Circular pattern| fucking circle pattern|
-| Ellipsie | Creates Ellipsie|
-
+This tool palette is organized into logical categories to facilitate 3D modeling and analysis.
 
 ---
+
+### 📏 Analysis & Model Information
+
+| Tool | Description |
+| :--- | :--- |
+| **Count parameters** | Counts the total number of all **model parameters**. |
+| **List parameters** | Lists all defined **model parameters** in detail. |
+
+---
+
+### ✏️ Sketching & Creation Tools
+
+| Tool | Description |
+| :--- | :--- |
+| **Draw lines** | Creates a **polyline** (multiple connected lines) as a sketch. |
+| **3-Point Arc** | Draws a **circular arc** based on three defined points. |
+| **Ellipsie** | Generates an **ellipse** (elliptical curve) in the sketching plane. |
+| **Draw box** | Creates a **box** (solid body) with definable height, width, and length, plus position. |
+| **Draw cylinder** | Draws a **cylinder** (solid body). |
+
+---
+
+### ⚙️ Feature & Modification Tools
+
+| Tool | Description |
+| :--- | :--- |
+| **Revolve** | Creates a revolved body by **revolving** a profile around an axis. |
+| **Sweep** | Extrudes a profile (e.g., circle) along a **spline path** (sweep). |
+| **Thin extrusion** | Creates a **thin-walled extrusion** (extrusion with constant wall thickness). |
+| **Cut extrude** | Removes material from a body by **cutting** a sketch (as a hole/pocket). |
+| **Fillet edges** | Rounds sharp edges with a defined **radius** (fillet). |
+| **Shell body** | **Hollows** out the body, leaving a uniform wall thickness. |
+
+---
+
+### 🔄 Patterning & Miscellaneous
+
+| Tool | Description |
+| :--- | :--- |
+| **Circular pattern** | Creates a **circular pattern** (array) of features or bodies. |
+| **Undo** | **Undoes** the last operation. |
+| **Export** | **Exports** the model in common formats like **STL** or **STEP**. |
+| **Draw Witzenmann logo** | A **fun demo function** for creating the Witzenmann logo. |
 
 ## Architecture
 
