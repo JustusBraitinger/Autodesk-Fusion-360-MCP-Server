@@ -4,6 +4,7 @@ import logging
 import requests
 from mcp.server.fastmcp import FastMCP
 import config
+from docstring import DOCSTRINGS
 
 
 
@@ -84,7 +85,7 @@ def send_request(endpoint,data,headers):
     """
     try:
         data = json.dumps(data)
-        response = requests.post(endpoint,data,headers,timeout=0.01)
+        response = requests.post(endpoint,data,headers,timeout =10 )
         data = response.json
         return data
     except requests.RequestException as e:
@@ -94,7 +95,31 @@ def send_request(endpoint,data,headers):
         logging.error("Failed to decode JSON response: %s", e)
         raise
 
-
+@mcp.tool()
+def create_thread(inside: bool, allsizes: int, length: float):
+    """Erstellt ein Gewinde in Fusion 360
+    Im Moment wählt der User selber in Fusioibn 360 das Profil aus
+    Du musst nur angeben ob es innen oder außen sein soll
+    und die länge des Gewindes
+    allsizes haben folgende werte :
+           # allsizes :
+        #'1/4', '5/16', '3/8', '7/16', '1/2', '5/8', '3/4', '7/8', '1', '1 1/8', '1 1/4',
+        # '1 3/8', '1 1/2', '1 3/4', '2', '2 1/4', '2 1/2', '2 3/4', '3', '3 1/2', '4', '4 1/2', '5')
+        # allsizes = int value from 1 to 22
+    
+    """
+    try:
+        endpoint = config.ENDPOINTS["threaded"]
+        payload = {
+            "inside": inside,
+            "allsizes": allsizes,
+            "length": length
+        }
+        headers = config.HEADERS
+        return send_request(endpoint, payload, headers)
+    except Exception as e:
+        logging.error("Create thread failed: %s", e)
+        raise
 
 @mcp.tool()
 def test_connection():
@@ -110,7 +135,7 @@ def test_connection():
 def delete_all():
     """Löscht alle Objekte in der aktuellen Fusion 360-Sitzung."""
     try:
-        endpoint = config.ENDPOINTS["destroy"]
+        endpoint = config.ENDPOINTS["delete_everything"]
         headers = config.HEADERS
         send_request(endpoint, {}, headers)
     except Exception as e:
@@ -388,6 +413,59 @@ def shell_body(thickness: float, faceindex: int):
     except requests.RequestException as e:
         logging.error("Shell body failed: %s", e)
         
+
+@mcp.tool()
+def draw_sphere(x: float, y: float, z: float, radius: float):
+    """
+    Zeichne eine Kugel in Fusion 360
+    Du kannst die Koordinaten als Float übergeben
+    Du kannst den Radius als Float übergeben
+    Beispiel: "XY", "YZ", "XZ"
+    Gib immer JSON SO:
+    {
+        "x":0,
+        "y":0,
+        "z":0,
+        "radius":5
+    }
+    """
+    try:
+        headers = config.HEADERS
+        endpoint = config.ENDPOINTS["draw_sphere"]
+        data = {
+            "x": x,
+            "y": y,
+            "z": z,
+            "radius": radius
+        }
+        return send_request(endpoint, data, headers)
+
+    except requests.RequestException as e:
+        logging.error("Draw sphere failed: %s", e)
+        raise
+
+
+@mcp.tool()
+def boolean_operation(operation: str):
+    """
+    Führe eine boolesche Operation auf dem letzten Körper aus.
+    Du kannst die Operation als String übergeben.
+    Mögliche Werte sind: "cut", "join", "intersect"
+    Wichtig ist, dass du vorher zwei Körper erstellt hast,
+    """
+    try:
+        headers = config.HEADERS
+        endpoint = config.ENDPOINTS["boolean_operation"]
+        data = {
+            "operation": operation
+        }
+        return send_request(endpoint, data, headers)
+    except requests.RequestException as e:
+        logging.error("Boolean operation failed: %s", e)
+        raise
+
+
+      
 @mcp.tool()
 def draw_lines(points : list, plane : str):
     """
@@ -785,6 +863,38 @@ def vase():
     return prompt
 
 
+
+@mcp.prompt()
+def teil():
+    prompt = """
+                Box erstellen:
+
+                Eine flache Box mit den Maßen:
+                Höhe: 10
+                Breite: 10
+                Tiefe: 0.5
+
+                Löcher hinzufügen:
+
+                Insgesamt 8 Löcher:
+                4 Löcher an den Ecken, leicht eingerückt.
+                4 Löcher näher an der Mitte.
+                Tiefe: 0.2
+                Durchmesser: 0.5
+                Faceindex: 4.
+
+                Mittiges Loch:
+
+                Einen 2D-Kreis zeichnen:
+                Radius: 2
+                Mit Cut-Extrude komplett durch die Box schneiden:
+                Richtung: Nach oben (Tiefe: 0.5).
+                """
+
+    return prompt
+
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
@@ -794,4 +904,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     mcp.run(transport=args.server_type)
-
