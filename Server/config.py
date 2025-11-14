@@ -31,7 +31,12 @@ ENDPOINTS = {
     "ellipsie": f"{BASE_URL}/ellipsis",
     "draw2Dcircle": f"{BASE_URL}/create_circle",
     "loft": f"{BASE_URL}/loft",
-    "test_connection": f"{BASE_URL}/test_connection"
+    "test_connection": f"{BASE_URL}/test_connection",
+    "draw_sphere": f"{BASE_URL}/sphere",
+    "threaded": f"{BASE_URL}/threaded",
+    "delete_everything": f"{BASE_URL}/delete_everything",
+    "boolean_operation": f"{BASE_URL}/boolean_operation"
+    
 }
 
 # Request Headers
