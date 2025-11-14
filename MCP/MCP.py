@@ -6,6 +6,7 @@ import json
 import time
 import queue
 from pathlib import Path
+import math
 
 ModelParameterSnapshot = []
 httpd = None
@@ -117,6 +118,14 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             loft(design, ui, task[1])
         elif task[0] == 'ellipsis':
             draw_ellipis(design,ui,task[1],task[2],task[3],task[4],task[5],task[6],task[7],task[8],task[9],task[10])
+        elif task[0] == 'draw_sphere':
+            create_sphere(design, ui, task[1], task[2], task[3], task[4])
+        elif task[0] == 'threaded':
+            thread(design, ui, 0, task[1], task[2], task[3])
+        elif task[0] == 'delete_everything':
+            delete(design, ui)
+        elif task[0] == 'boolean_operation':
+            boolean_operation(design,ui,task[1])
 
 
 class TaskThread(threading.Thread):
@@ -135,6 +144,46 @@ class TaskThread(threading.Thread):
 
 
 ###Geometry Functions######
+
+def create_sphere(design, ui, radius, x, y, z):
+    try:
+        rootComp = design.rootComponent
+        component: adsk.fusion.Component = design.rootComponent
+        # Create a new sketch on the xy plane.
+        sketches = rootComp.sketches
+        
+        xyPlane =  rootComp.xYConstructionPlane
+        sketch = sketches.add(xyPlane)
+        # Draw a circle.
+        circles = sketch.sketchCurves.sketchCircles
+        circles.addByCenterRadius(adsk.core.Point3D.create(x,y,z), radius)
+        # Draw a line to use as the axis of revolution.
+        lines = sketch.sketchCurves.sketchLines
+        axisLine = lines.addByTwoPoints(
+            adsk.core.Point3D.create(x - radius, y, z),
+            adsk.core.Point3D.create(x + radius, y, z)
+        )
+
+        # Get the profile defined by half of the circle.
+        profile = sketch.profiles.item(0)
+        # Create an revolution input for a revolution while specifying the profile and that a new component is to be created
+        revolves = component.features.revolveFeatures
+        revInput = revolves.createInput(profile, axisLine, adsk.fusion.FeatureOperations.NewComponentFeatureOperation)
+        # Define that the extent is an angle of 2*pi to get a sphere
+        angle = adsk.core.ValueInput.createByReal(2*math.pi)
+        revInput.setAngleExtent(False, angle)
+        # Create the extrusion.
+        ext = revolves.add(revInput)
+        
+        
+    except:
+        if ui :
+            ui.messageBox('Failed create_sphere:\n{}'.format(traceback.format_exc()))
+
+
+
+
+
 def draw_Box(design, ui, height, width, depth,x,y,z, plane=None):
     """
     Draws Box with given dimensions height, width, depth at position (x,y,z)
@@ -353,7 +402,68 @@ def offsetplane(design,ui,offset,plane ="XY"):
 
 
 
+def thread(design, ui,faceindex,inside,length,sizes):
+    """
     
+    params:
+    inside: boolean information if the face is inside or outside
+    lengt: length of the thread
+    sizes : index of the size in the allsizes list
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        threadFeatures = rootComp.features.threadFeatures
+        
+        ui.messageBox('Select a face for threading.')               
+        face = ui.selectEntity("Select a face for threading", "Faces").entity
+        faces = adsk.core.ObjectCollection.create()
+        faces.add(face)
+        #Get the thread infos
+        
+        
+        threadDataQuery = threadFeatures.threadDataQuery
+        threadTypes = threadDataQuery.allThreadTypes
+        threadType = threadTypes[0]
+
+        allsizes = threadDataQuery.allSizes(threadType)
+        sizes = int(sizes)
+        
+        # allsizes :
+        #'1/4', '5/16', '3/8', '7/16', '1/2', '5/8', '3/4', '7/8', '1', '1 1/8', '1 1/4',
+        # '1 3/8', '1 1/2', '1 3/4', '2', '2 1/4', '2 1/2', '2 3/4', '3', '3 1/2', '4', '4 1/2', '5')
+        #
+        threadSize = allsizes[sizes]
+
+
+        
+        allDesignations = threadDataQuery.allDesignations(threadType, threadSize)
+        threadDesignation = allDesignations[0]
+        
+        allClasses = threadDataQuery.allClasses(False, threadType, threadDesignation)
+        threadClass = allClasses[0]
+        
+        # create the threadInfo according to the query result
+        threadInfo = threadFeatures.createThreadInfo(inside, threadType, threadDesignation, threadClass)
+        
+        # get the face the thread will be applied to
+    
+        
+        # define the thread input with the lenght 3.5 cm
+        threadInput = threadFeatures.createInput(faces, threadInfo)
+        threadInput.isFullLength = False
+        threadInput.threadLength = adsk.core.ValueInput.createByReal(length)
+        
+        # create the final thread
+        thread = threadFeatures.add(threadInput)
+
+
+
+
+        
+    except: 
+        if ui:
+            ui.messageBox('Failed offsetplane thread:\n{}'.format(traceback.format_exc()))
 
 
 
@@ -514,7 +624,44 @@ def loft(design, ui, sketchcount):
 
 
 
+def boolean_operation(design,ui,op):
+    """
+    This function performs boolean operations (cut, intersect, join)
+    It is important to draw the target body first, then the tool body
+    
+    """
+    try:
+        app = adsk.core.Application.get()
+        product = app.activeProduct
+        design = adsk.fusion.Design.cast(product)
+        ui  = app.userInterface
 
+        # Get the root component of the active design.
+        rootComp = design.rootComponent
+        features = rootComp.features
+        bodies = rootComp.bRepBodies
+
+        targetBody = bodies.item(1) #select the currently 
+        toolBody = bodies.item(0)   #selected bodyss
+
+        # Define the required inputs and create te combine feature.
+        combineFeatures = rootComp.features.combineFeatures
+        tools = adsk.core.ObjectCollection.create()
+        tools.add(toolBody)
+        input: adsk.fusion.CombineFeatureInput = combineFeatures.createInput(targetBody, tools)
+        input.isNewComponent = False
+        input.isKeepToolBodies = False
+        if op == "cut":
+            input.operation = adsk.fusion.FeatureOperations.CutFeatureOperation
+        elif op == "intersect":
+            input.operation = adsk.fusion.FeatureOperations.IntersectFeatureOperation
+        elif op == "join":
+            input.operation = adsk.fusion.FeatureOperations.JoinFeatureOperation
+            
+        combineFeature = combineFeatures.add(input)
+    except:
+        if ui:
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
 
@@ -697,6 +844,22 @@ def undo(design, ui):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
+def delete(design,ui):
+    try:
+        rootComp = design.rootComponent
+
+        bodies = rootComp.bRepBodies
+        removeFeat = rootComp.features.removeFeatures
+
+        # Von hinten nach vorne löschen
+        for i in range(bodies.count - 1, -1, -1): # startet bei bodies.count - 1 und geht in Schritten von -1 bis 0 
+            body = bodies.item(i)
+            removeFeat.add(body)
+        
+        
+    except:
+        if ui:
+            ui.messageBox('Failed to delete:\n{}'.format(traceback.format_exc()))
 
 
 
@@ -1180,9 +1343,43 @@ class Handler(BaseHTTPRequestHandler):
                  self.send_header('Content-type','application/json')
                  self.end_headers()
                  self.wfile.write(json.dumps({"message": "Ellipsis wird erstellt"}).encode('utf-8'))
+                 
+            elif path == '/sphere':
+                radius = float(data.get('radius',5.0))
+                x = float(data.get('x',0))
+                y = float(data.get('y',0))
+                z = float(data.get('z',0))
+                plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('draw_sphere', radius, x, y,z, plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Sphere wird erstellt"}).encode('utf-8'))
 
-
-     
+            elif path == '/threaded':
+                inside = bool(data.get('inside', True))
+                allsizes = int(data.get('allsizes', 10))
+                length = float(data.get('length', 5.0))
+                task_queue.put(('threaded', inside, allsizes, length))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Threaded Feature wird erstellt"}).encode('utf-8'))
+                
+            elif path == '/delete_everything':
+                task_queue.put(('delete_everything',))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Alle Bodies werden gelöscht"}).encode('utf-8'))
+                
+            elif path == '/boolean_operation':
+                operation = data.get('operation', 'join')  # 'join', 'cut', 'intersect'
+                task_queue.put(('boolean_operation', operation))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Boolean Operation wird ausgeführt"}).encode('utf-8'))
             
             else:
                 self.send_error(404,'Not Found')
