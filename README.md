@@ -43,9 +43,8 @@ git clone https://github.com/JustusBraitinger/FusionMCP
 3. Delete the MCP folder from the FusionMCP folder
 4. Open Fusion 360
 6. Go to **Utilities → Add-ins**
-7. Click the **+** button
-8. Select the **MCP** folder from this repository, you will probably find it under C:\Users\FusionMCMP
-9. **Do NOT start the add-in yet**
+7. The Addin should be visible by now,   
+8. **Do NOT start the add-in yet**
 
 
 ## Install Python Dependencies
