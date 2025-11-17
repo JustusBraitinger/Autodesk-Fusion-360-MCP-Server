@@ -7,6 +7,7 @@ import time
 import queue
 from pathlib import Path
 import math
+import os
 
 ModelParameterSnapshot = []
 httpd = None
@@ -66,13 +67,13 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'draw_witzenmann':
             draw_Witzenmann(design, ui, task[1],task[2])
         elif task[0] == 'export_stl':
-            FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTL.stl"
-            export_as_STL(design, ui, FilePath)
+
+            export_as_STL(design, ui, task[1])
         elif task[0] == 'fillet_edges':
             fillet_edges(design, ui, task[1])
         elif task[0] == 'export_step':
-            FilePath = r"C:\Users\justu\Desktop\FusioSTL\testSTEP.step"
-            export_as_STEP(design, ui, FilePath)
+
+            export_as_STEP(design, ui, task[1])
         elif task[0] == 'draw_cylinder':
             draw_cylinder(design, ui, task[1], task[2], task[3], task[4], task[5],task[6])
         elif task[0] == 'shell_body':
@@ -863,20 +864,23 @@ def delete(design,ui):
 
 
 
-def export_as_STEP(design, ui, FilePath):
+def export_as_STEP(design, ui,Name):
     try:
+        
         exportMgr = design.exportManager
-        # Absoluter Pfad, r"" für Backslashes
-        if not FilePath:
-            desktop = Path.home() / "Desktop"
-            directories = desktop / "FusionExports"
-            directories.mkdir(parents=True, exist_ok=True)
-            stepOptions = exportMgr.createSTEPExportOptions(str(directories / "Fusion.step"))
-        else:
-            stepOptions = exportMgr.createSTEPExportOptions(FilePath)
+              
+        directory_name = "Fusion_Exports"
+        FilePath = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') 
+        Export_dir_path = os.path.join(FilePath, directory_name, Name)
+        os.makedirs(Export_dir_path, exist_ok=True) 
+        
+        stepOptions = exportMgr.createSTEPExportOptions(Export_dir_path+ '/test.step')  # Save as Fusion.step in the export directory
+       # stepOptions = exportMgr.createSTEPExportOptions(Export_dir_path)       
+        
+        
         res = exportMgr.execute(stepOptions)
         if res:
-            ui.messageBox(f"Exported STEP to: {FilePath}")
+            ui.messageBox(f"Exported STEP to: {Export_dir_path}")
         else:
             ui.messageBox("STEP export failed")
     except:
@@ -948,18 +952,62 @@ def draw_cylinder(design, ui, radius, height, x,y,z,plane = "XY"):
 
 
 
-def export_as_STL(design, ui, FilePath):
+def export_as_STL(design, ui,Name):
+    """
+    No idea whats happening here
+    Copied straight up from API examples
+    """
     try:
+
         rootComp = design.rootComponent
+        
+
         exportMgr = design.exportManager
+
         stlRootOptions = exportMgr.createSTLExportOptions(rootComp)
-        stlRootOptions.meshRefinement = adsk.fusion.MeshRefinementSettings.MeshRefinementHigh
-        stlRootOptions.filename = FilePath
-        exportMgr.execute(stlRootOptions)
-        ui.messageBox(f"Exported STL to: {FilePath}")
+        
+        directory_name = "Fusion_Exports"
+        FilePath = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') 
+        Export_dir_path = os.path.join(FilePath, directory_name, Name)
+        os.makedirs(Export_dir_path, exist_ok=True) 
+
+        printUtils = stlRootOptions.availablePrintUtilities
+
+        # export the root component to the print utility, instead of a specified file            
+        for printUtil in printUtils:
+            stlRootOptions.sendToPrintUtility = True
+            stlRootOptions.printUtility = printUtil
+
+            exportMgr.execute(stlRootOptions)
+            
+
+        
+        # export the occurrence one by one in the root component to a specified file
+        allOccu = rootComp.allOccurrences
+        for occ in allOccu:
+            Name = Export_dir_path + "/" + occ.component.name
+            
+            # create stl exportOptions
+            stlExportOptions = exportMgr.createSTLExportOptions(occ, Name)
+            stlExportOptions.sendToPrintUtility = False
+            
+            exportMgr.execute(stlExportOptions)
+
+        # export the body one by one in the design to a specified file
+        allBodies = rootComp.bRepBodies
+        for body in allBodies:
+            Name = Export_dir_path + "/" + body.parentComponent.name + '-' + body.name 
+            
+            # create stl exportOptions
+            stlExportOptions = exportMgr.createSTLExportOptions(body, Name)
+            stlExportOptions.sendToPrintUtility = False
+            
+            exportMgr.execute(stlExportOptions)
+            
+        ui.messageBox(f"Exported STL to: {Export_dir_path}")
     except:
         if ui:
-            ui.messageBox('Failed export_as_STL:\n{}'.format(traceback.format_exc()))
+            ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 def get_model_parameters(design):
     model_params = []
@@ -1124,7 +1172,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"message": "Witzenmann-Logo wird erstellt"}).encode('utf-8'))
 
             elif path == '/Export_STL':
-                task_queue.put(('export_stl', r"C:\Users\justu\Desktop\FusioSTL\Test.stl"))
+                name = str(data.get('Name','Test.stl'))
+                task_queue.put(('export_stl', name))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -1132,7 +1181,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
             elif path == '/Export_STEP':
-                task_queue.put(('export_step', r"C:\Users\justu\Desktop\FusioSTL\Test.step"))
+                name = str(data.get('name','Test.step'))
+                task_queue.put(('export_step',name))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
