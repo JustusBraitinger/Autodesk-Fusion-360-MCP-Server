@@ -72,6 +72,10 @@ mcp = FastMCP("Fusion",
                 Wenn du loft machst:
                 -Erstelle zunächst die sketches die du für die loft benutzen willst
                 -Rufe dann loft mit der anzahl der sketches auf
+                
+                
+                Circular Pattern:
+                - Du kannst nicht von einem erstellten Loch ein Circular Pattern machen, da es kein Körper ist.
              """
                 )
 
@@ -270,21 +274,27 @@ def list_parameters():
         raise
 
 @mcp.tool()
-def export_step():
+def export_step(name : str):
     """Exportiert das Modell als STEP-Datei."""
     try:
         endpoint = config.ENDPOINTS["export_step"]
-        return send_request(endpoint, {}, {})
+        data = {
+            "name": name
+        }
+        return send_request(endpoint, data, {})
     except Exception as e:
         logging.error("Export STEP failed: %s", e)
         raise
 
 @mcp.tool()
-def export_stl():
+def export_stl(name : str):
     """Exportiert das Modell als STL-Datei."""
     try:
         endpoint = config.ENDPOINTS["export_stl"]
-        return send_request(endpoint, {}, {})
+        data = {
+            "name": name
+        }
+        return send_request(endpoint, data, {})
     except Exception as e:
         logging.error("Export STL failed: %s", e)
         raise
