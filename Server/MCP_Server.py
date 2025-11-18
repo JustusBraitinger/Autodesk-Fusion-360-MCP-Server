@@ -105,7 +105,7 @@ def send_request(endpoint,data,headers):
         raise
 
 @mcp.tool()
-def create_thread(inside: bool, allsizes: int, length: float):
+def create_thread(inside: bool, allsizes: int):
     """Erstellt ein Gewinde in Fusion 360
     Im Moment wählt der User selber in Fusioibn 360 das Profil aus
     Du musst nur angeben ob es innen oder außen sein soll
@@ -122,7 +122,7 @@ def create_thread(inside: bool, allsizes: int, length: float):
         payload = {
             "inside": inside,
             "allsizes": allsizes,
-            "length": length
+     
         }
         headers = config.HEADERS
         return send_request(endpoint, payload, headers)
@@ -900,12 +900,35 @@ def teil():
                 Mittiges Loch:
 
                 Einen 2D-Kreis zeichnen:
-                Radius: 2
+                Mache ihn bei z = 0
+                Radius: 1
                 Mit Cut-Extrude komplett durch die Box schneiden:
-                Richtung: Nach oben (Tiefe: 0.5).
+                Richtung: Nach oben einfach übertreben. Mach einfach +10
+                
+                Sage dem Nutzer, dass er das innere des mittleren lochs auswählen soll
+                Rufe thread funktion auf um ein gewinde zu erstellen
+                mit inside = True
+                allsizes = 10 (für 1/4 Zoll Gewinde)
+                
+                
                 """
 
     return prompt
+
+
+@mcp.prompt()
+def kompensator():
+    prompt = """
+                Bau einen Kompensator in Fusion 360 mit dem MCP: Lösche zuerst alles.
+                Erstelle dann ein dünnwandiges Rohr: Zeichne einen 2D-Kreis mit Radius 5 in der XY-Ebene bei z=0, 
+                extrudiere ihn thin mit distance 10 und thickness 0.1. Füge dann 8 Ringe nacheinander übereinander hinzu (Erst Kreis dann Extrusion 8 mal): Für jeden Ring in
+                den Höhen z=1 bis z=8 zeichne einen 2D-Kreis mit Radius 5.1 in der XY-Ebene und extrudiere ihn thin mit distance 0.5 und thickness 0.5.
+                Verwende keine boolean operations, lass die Ringe als separate Körper. Runde anschließend die Kanten mit Radius 0.2 ab.
+                Mache schnell!!!!!!
+    
+                """
+    return prompt
+
 
 
 
