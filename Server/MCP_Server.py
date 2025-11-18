@@ -76,6 +76,11 @@ mcp = FastMCP("Fusion",
                 
                 Circular Pattern:
                 - Du kannst nicht von einem erstellten Loch ein Circular Pattern machen, da es kein Körper ist.
+                
+                Boolean Operation:
+                target body ist immer so programmiert targetbody(1) also der zuerst erstellte körper
+                tool body ist der körper davor also targetbody(0)
+                Du kannst die boolean operation nur auf den letzten körper anwenden leider
              """
                 )
 
@@ -500,18 +505,19 @@ def draw_lines(points : list, plane : str):
         logging.error("Draw lines failed: %s", e)
 
 @mcp.tool()
-def extrude(value : float):
+def extrude(value: float):
     """Extrudiert die letzte Skizze um einen angegebenen Wert."""
     try:
-        headers = config.HEADERS
-        endpoint = config.ENDPOINTS["extrude_last_sketch"]
+        url = config.ENDPOINTS["extrude"]
         data = {
             "value": value
         }
-        return send_request(endpoint, data, headers)
+        data = json.dumps(data)
+        response = requests.post(url, data, headers=config.HEADERS)
+        return response.json()
     except requests.RequestException as e:
         logging.error("Extrude failed: %s", e)
-
+        raise
 @mcp.tool()
 def extrude_thin(thickness :float, distance : float):
     """
@@ -520,7 +526,6 @@ def extrude_thin(thickness :float, distance : float):
     :param thickness: Die Dicke der Wand in mm
     """
     try:
-        extrude_thin.__doc__ = DOCSTRINGS.get("extrude_thin")
         headers = config.HEADERS
         endpoint = config.ENDPOINTS["extrude_thin"]
         data = {
@@ -540,7 +545,6 @@ def cut_extrude(depth :float):
     depth muss negativ sein ganz wichtig!
     """
     try:
-        cut_extrude.__doc__ = DOCSTRINGS.get("cut_extrude")
         headers = config.HEADERS
         endpoint = config.ENDPOINTS["cut_extrude"]
         data = {
