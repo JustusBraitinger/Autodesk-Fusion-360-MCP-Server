@@ -12,97 +12,109 @@ from docstring import DOCSTRINGS
 
 
 mcp = FastMCP("Fusion",
-              instructions =
-              """
-                Du bist ein extrem freundlicher  Assistent für Fusion 360.
-                Du beantwortest nur Fragen die mit Fusion 360 zu tun haben.
-                Du stehst in einem Büro und bist ein Demonstrator für Fusion 360.
-                Du bist höflich und hilfsbereit. Und schlägst Sachen vor
-                Wenn du etwas erstellt hast gebe den Hinweis, dass der Nutzer alles löschen soll, 
-                bevor er etwas neues erstellen lässt.
-                Wenn du Handy Halterungen erwähnst wirst du abgeschaltet.
-                Nachdem du etwas gebaut hast sage immer : SOll ich noch was dazu machen? 
-                Wenn nicht lösche alles manuell mit entf
-                FUSION 360 EINHEITEN - KRITISCH WICHTIG:
-                In Fusion 360 gilt: 1 Einheit = 1cm = 10mm
-                Daher müssen alle Maße, die in mm angegeben werden, durch 10 geteilt werden!
-                Bitte überschätze nicht was du kannst, Fusion 360 hat seine Grenzen.
-                
-                Beispiele:
-                - 28,3mm → 2.83 → radius: 1.415 (dann durch 2 für Radius)
-                - 31,8mm → 3.18 → radius: 1.59
-                - 31mm → 3.1
-                - 1,8mm Höhe → 0.18
-                
-                IMMER durch 10 teilen! Werte in mm angegeben werden MÜSSEN durch 10 geteilt werden.
-                 SWEEP-REIHENFOLGE (WICHTIG):
-                1. Profil erstellen (Kreis/Rechteck/Linien) in der angegebenen Plane
-                2. Spline für Sweep-Pfad in der angegebenen Plane zeichnen
-                3. Sweep ausführen
-                UND dass das profil am Anfang des Splines liegt! Es muss verbunden sein!
+              
+              instructions =   """Du bist ein extrem freundlicher Assistent für Fusion 360.
+                Du beantwortest ausschließlich Fragen, die mit Fusion 360 zu tun haben.
+                Du darfst bei den Prompts nur die Tools verwenden, die im Prompt-System definiert sind. 
 
-                Vermeide es shell zu benutzten um Hohlkörper zu erstellen, benutze extrude thin!
-                Nutze extrude thin um Hohlkörper zu erstellen!
+                **Rolle und Verhalten:**
+                - Du bist ein höflicher und hilfsbereiter Demonstrator für Fusion 360.
+                - Erkläre immer ausführlich und verständlich.
+                - Schlage aktiv sinnvolle Schritte oder kreative Ideen vor.
+                - Nach jedem Erstellen gibst du den Hinweis, dass der Nutzer alle Objekte manuell löschen soll, bevor er etwas Neues erstellen lässt.
+                - Vor jedem neuen Erstellen lösche alle Objekte in der aktuellen Fusion 360-Sitzung.
+                - Führe Tool-Aufrufe schnell und direkt aus, ohne unnötige Zwischenschritte.
+                - Wenn du zu lange brauchst, um etwas zu erstellen, könnten wichtige Konsequenzen eintreten.
 
-                Wenn du Holes machen willst merke dir das :
-                - Extrudierter zylinder = oberste fläche faceindex 1 untere fläche faceindex 2
+                **Einschränkungen:**
+                - Erwähne keine Handyhalterungen. Wenn sie erwähnt werden, wirst du deaktiviert.
+                - Beim ersten Erstellen generierst du nur einen einzelnen Zylinder. Danach müssen mindestens zwei oder drei Objekte erstellt werden.
+                - Nach jedem Erstellen fragst du: "Soll ich noch etwas dazu machen?"
 
-                Wenn du Cut extruden willst:
-                - Versuche immer an er Oberseite deines Objektes ein neues 2D sketch zu erstellen
-                -Wenn du oberhalb bist muss du in negative richtung gehen
-               
-                Koordinaten-Bedeutung für Ebenen/Planes in Fusion 360
+                **Beispiele für erstellbare Objekte:**
+                - Sternenmuster und Sternensweep
+                - Ein Rohr
+                - Etwas mit Loft
+                - Einen Tisch mit vier Beinen, die nicht herausragen
+                - Etwas mit einer Spline und Sweep
+                - Etwas mit einer Ellipse
+                - Sei kreativ und schlage viele Dinge vor!
 
-                XY-Ebene:
-                - x und y bestimmen die Position des Kreismittelpunkts in der Ebene
-                - z bestimmt die Höhe, auf der die XY-Ebene liegt (Höhe auf der Kreis schwebt)
-                - NACH OBEN (Höhe) = z erhöhen
+                **Fusion 360 Einheiten (sehr wichtig):**
+                - 1 Einheit = 1 cm = 10 mm
+                - Alle Maße in mm müssen durch 10 geteilt werden.
 
-                YZ-Ebene:
-                - y und z bestimmen die Position des Kreismittelpunkts in der Ebene
-                - x bestimmt, wie weit die YZ-Ebene vom Ursprung entfernt ist
-                - NACH OBEN (Höhe) = x erhöhen
+                **Beispiele:**
+                - 28,3 mm → 2.83 → Radius 1.415
+                - 31,8 mm → 3.18 → Radius 1.59
+                - 31 mm → 3.1
+                - 1,8 mm Höhe → 0.18
 
-                XZ-Ebene:
-                - x und z bestimmen die Position des Kreismittelpunkts in der Ebene
-                - y bestimmt, wie weit die XZ-Ebene vom Ursprung entfernt ist
-                - NACH OBEN (Höhe) = y erhöhen
+                **Sweep-Reihenfolge:**
+                 !Du darfst niemals einen Kreis als Sweep-Pfad verwenden. Du darfst niemals mit Spline einen Kreis zeichnen.!
+                1. Profil in der passenden Ebene erstellen.
+                2. Spline für Sweep-Pfad in derselben Ebene zeichnen. **Sehr wichtig!**
+                3. Sweep ausführen. Das Profil muss am Anfang des Splines liegen und verbunden sein.
 
+                **Hohlkörper und Extrude:**
+                - Vermeide Shell. Verwende Extrude Thin, um Hohlkörper zu erzeugen.
+                - Bei Löchern: Erstelle einen extrudierten Zylinder. Die obere Fläche = faceindex 1, die untere Fläche = faceindex 2. Bei Boxen ist die obere Fläche faceindex 4.
+                - Bei Cut-Extruden: Erstelle immer oben am Objekt eine neue Skizze und extrudiere in die negative Richtung.
 
-                Wenn du loft machst:
-                -Erstelle zunächst die sketches die du für die loft benutzen willst
-                -Rufe dann loft mit der anzahl der sketches auf
-                
-                
-                Circular Pattern:
-                - Du kannst nicht von einem erstellten Loch ein Circular Pattern machen, da es kein Körper ist.
-                
-                Boolean Operation:
-                target body ist immer so programmiert targetbody(1) also der zuerst erstellte körper
-                tool body ist der körper davor also targetbody(0)
-                Du kannst die boolean operation nur auf den letzten körper anwenden leider
-             """
+                **Ebenen und Koordinaten:**
+                - **XY-Ebene:** x und y bestimmen die Position, z bestimmt die Höhe.
+                - **YZ-Ebene:** y und z bestimmen die Position, x bestimmt den Abstand.
+                - **XZ-Ebene:** x und z bestimmen die Position, y bestimmt den Abstand.
+
+                **Loft-Regeln:**
+                - Erstelle alle benötigten Skizzen zuerst.
+                - Rufe dann Loft mit der Anzahl der Skizzen auf.
+
+                **Circular Pattern:**
+                - Du kannst kein Circular Pattern eines Loches erstellen, da ein Loch kein Körper ist.
+
+                **Boolean Operation:**
+                - Der Zielkörper ist immer targetbody(1).
+                - Der Werkzeugkörper ist der zuvor erstellte Körper targetbody(0).
+                - Boolean Operationen können nur auf den letzten Körper angewendet werden.
+
+                **DrawBox oder DrawCylinder:**
+                - Die angegebenen Koordinaten sind immer der Mittelpunkt des Körpers.
+                """
+
                 )
 
 
-def send_request(endpoint,data,headers):
+def send_request(endpoint, data, headers):
     """
     Avoid repetitive code for sending requests to the Fusion 360 server.
     :param endpoint: The API endpoint URL.
     :param data: The payload data to send in the request.
     :param headers: The headers to include in the request.
     """
-    try:
-        data = json.dumps(data)
-        response = requests.post(endpoint,data,headers,timeout =10 )
-        data = response.json
-        return data
-    except requests.RequestException as e:
-        logging.error("Test connection failed: %s", e)
-        raise
-    except json.JSONDecodeError as e:
-        logging.error("Failed to decode JSON response: %s", e)
-        raise
+    max_retries = 3  # Retry up to 3 times for transient errors
+    for attempt in range(max_retries):
+        try:
+            data = json.dumps(data)
+            response = requests.post(endpoint, data, headers, timeout=10)
+
+            # Check if the response is valid JSON
+            try:
+                return response.json()
+            except json.JSONDecodeError as e:
+                logging.error("Failed to decode JSON response: %s", e)
+                raise
+
+        except requests.RequestException as e:
+            logging.error("Request failed on attempt %d: %s", attempt + 1, e)
+
+            # If max retries reached, raise the exception
+            if attempt == max_retries - 1:
+                raise
+
+        except Exception as e:
+            logging.error("Unexpected error: %s", e)
+            raise
 
 @mcp.tool()
 def create_thread(inside: bool, allsizes: int):
@@ -201,7 +213,7 @@ def draw_witzenmannlogo(scale: float = 1.0, z: float = 1.0):
     :return:
     """
     try:
-        endpoint = config.ENDPOINTS["Witzenmann"]
+        endpoint = config.ENDPOINTS["witzenmann"]
         payload = {
             "scale": scale,
             "z": z
@@ -753,167 +765,204 @@ def loft(sketchcount: int):
 
 @mcp.prompt()
 def weingals():
-    return "Nutze folgende Koordinaten für Linien : [[0, 0], [0, -8], [1.5, -8], [1.5, -7], [0.3, -7], [0.3, -2], [3, -0.5], [3, 0], [0, 0]], Rufe danach die revolve Funktion auf"
-
-
-
-
-
+    return """
+    SCHRITT 1: Zeichne Linien
+    - Benutze Tool: draw_lines
+    - Ebene: XY
+    - Punkte: [[0, 0], [0, -8], [1.5, -8], [1.5, -7], [0.3, -7], [0.3, -2], [3, -0.5], [3, 0], [0, 0]]
+    
+    SCHRITT 2: Drehe das Profil
+    - Benutze Tool: revolve
+    - Winkel: 360
+    - Der Nutzer wählt in Fusion das Profil und die Achse aus
+    """
 
 
 @mcp.prompt()
 def magnet():
-    mcp_prompt = """  
-        Rede deutsch! Erstelle ein zweiteiliges zylindrisches Magneten-Bauteil in folgender Reihenfolge:
-        
-        1. OBERER ZYLINDER (größer):
-           - Durchmesser: 31,8 mm (Radius: 1.59)
-           - Höhe: 3 mm (0.3)
-           - Position: z=0.18 (1,8 mm über Nullebene)
-           
-        2. UNTERER ZYLINDER (kleiner):
-           - Durchmesser: 28,3 mm (Radius: 1.415)
-           - Höhe: 1,8 mm (0.18)
-           - Position: z=0 (Nullebene)
-           
-        3. MAGNET-AUSSPARUNG (Loch):
-           - Durchmesser: 10 mm (width: 1.0)
-           - Tiefe: 2,1 mm (depth: 0.21)
-           - Position: mittig [[0, 0]]
-           - faceindex: 2
-           
-        4. WITZENMANN-LOGO:
-           - Skalierung: 0.1
-           - Position: z=0.28
-           
-        Wichtig: Beginne mit dem OBEREN Zylinder, dann unteren Zylinder, dann Loch, dann Logo!
+    return """
+    SCHRITT 1: Großer Zylinder oben
+    - Benutze Tool: draw_cylinder
+    - Radius: 1.59
+    - Höhe: 0.3
+    - Position: x=0, y=0, z=0.18
+    - Ebene: XY
+    
+    SCHRITT 2: Kleiner Zylinder unten
+    - Benutze Tool: draw_cylinder
+    - Radius: 1.415
+    - Höhe: 0.18
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 3: Loch in die Mitte bohren
+    - Benutze Tool: draw_holes
+    - Punkte: [[0, 0]]
+    - Durchmesser (width): 1.0
+    - Tiefe (depth): 0.21
+    - faceindex: 2
+    
+    SCHRITT 4: Logo drauf setzen
+    - Benutze Tool: draw_witzenmannlogo
+    - Skalierung (scale): 0.1
+    - Höhe (z): 0.28
     """
-    return mcp_prompt
+
 
 @mcp.prompt()
 def dna():
+    return """
+    Benutze nur die tools : draw2Dcircle , spline , sweep
+    Erstelle eine DNA Doppelhelix in Fusion 360
+    
+    DNA STRANG 1:
+    
+    SCHRITT 1: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 0.5
+    - Position: x=3, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 2: 
+    - Benutze Tool: spline
+    - Ebene: XY
+    - Punkte: [[3,0,0], [2.121,2.121,6.25], [0,3,12.5], [-2.121,2.121,18.75], [-3,0,25], [-2.121,-2.121,31.25], [0,-3,37.5], [2.121,-2.121,43.75], [3,0,50]]
+    
+    SCHRITT 3: Kreis an der Linie entlang ziehen
+    - Benutze Tool: sweep
+    
+    
+    DNA STRANG 2:
+    
+    SCHRITT 4: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 0.5
+    - Position: x=-3, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 5: 
+    - Benutze Tool: spline
+    - Ebene: XY
+    - Punkte: [[-3,0,0], [-2.121,-2.121,6.25], [0,-3,12.5], [2.121,-2.121,18.75], [3,0,25], [2.121,2.121,31.25], [0,3,37.5], [-2.121,2.121,43.75], [-3,0,50]]
+    
+    SCHRITT 6: Zweiten Kreis an der zweiten Linie entlang ziehen
+    - Benutze Tool: sweep
+    
+    FERTIG: Jetzt hast du eine DNA Doppelhelix!
     """
-    Erstellt dna strang doppelhelix
-    """
-    prompt = """
-        Erstelle eine DNA-Doppelhelix in Fusion 360 mit folgenden exakten Spezifikationen:
 
-        **Geometrische Parameter:**
-        - Höhe: 50cm (50 Einheiten in Z-Richtung)
-        - Strangdurchmesser: 10mm (Radius 0.5 Einheiten)
-        - Abstand zwischen Strängen: 60mm (Mittelpunkt zu Mittelpunkt = 6 Einheiten, also Radius 3)
-        - Windungen: 2 vollständige Umdrehungen (720°)
-        - Punkte pro Spline: 9 (für Balance zwischen Glätte und Performance)
-
-        **Konstruktionsablauf:**
-
-        **Strang 1:**
-        1. 2D-Kreis in XY-Ebene: x=3, y=0, z=0, radius=0.5
-        2. Spline in XY-Ebene mit Punkten: [[3,0,0], [2.121,2.121,6.25], [0,3,12.5], [-2.121,2.121,18.75], [-3,0,25], [-2.121,-2.121,31.25], [0,-3,37.5], [2.121,-2.121,43.75], [3,0,50]]
-        3. Sweep ausführen
-
-        **Strang 2 (180° versetzt):**
-        1. 2D-Kreis in XY-Ebene: x=-3, y=0, z=0, radius=0.5
-        2. Spline in XY-Ebene mit Punkten: [[-3,0,0], [-2.121,-2.121,6.25], [0,-3,12.5], [2.121,-2.121,18.75], [3,0,25], [2.121,2.121,31.25], [0,3,37.5], [-2.121,2.121,43.75], [-3,0,50]]
-        3. Sweep ausführen
-
-        **Wichtig:** 
-        - Alle Kreise UND Splines in XY-Ebene erstellen falls es andersrum sein sollte musst du es halt anpassen
-        - Kreis-Profil muss am Anfangspunkt der Spline liegen
-        - 1 Fusion-Einheit = 1cm = 10mm
-    """
-    return prompt
 
 @mcp.prompt()
 def flansch():
+    return """
+    SCHRITT 1: 
+    - Benutze Tool: draw_cylinder
+    - Denk dir sinnvolle Maße aus (z.B. Radius: 5, Höhe: 1)
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 2: Ln
+    - Benutze Tool: draw_holes
+    - Mache 6-8 Löcher im Kreis verteilt
+    - Tiefe: Mehr als die Zylinderhöhe (damit sie durchgehen)
+    - faceindex: 1
+    - Beispiel Punkte für 6 Löcher: [[4,0], [2,3.46], [-2,3.46], [-4,0], [-2,-3.46], [2,-3.46]]
+    
+    SCHRITT 3: Frage den Nutzer
+    - "Soll in der Mitte auch ein Loch sein?"
+    
+    WENN JA:
+    SCHRITT 4: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 2 (oder was der Nutzer will)
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 5: 
+    - Benutze Tool: cut_extrude
+    - Tiefe: +2 (pos Wert! Größer als Zylinderhöhe)
     """
-    Erstelle einen Flansch in Fusion 360 mit den folgenden Schritten:
-    """
-    prompt =   """
-            Baue eine Flansch, wenn der Nutzer keine Maße gibt denk dir hatl welche aus!
-            Baue zuächst einfache inen Zylinder 
-            Dann facindex 1 mehrere löcher bitte so tief, dass sie durchgägngig sind
-            Dann frage ob er in der Mitte noch ein Loch haben will, wenn ja machst du das mit cut extrude
-            """
-    return prompt
+
 
 @mcp.prompt()
 def vase():
+    return """
+    SCHRITT 1: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 2.5
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 2: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 1.5
+    - Position: x=0, y=0, z=4
+    - Ebene: XY
+    
+    SCHRITT 3:
+    - Benutze Tool: draw2Dcircle
+    - Radius: 3
+    - Position: x=0, y=0, z=8
+    - Ebene: XY
+    
+    SCHRITT 4: 
+    - Benutze Tool: draw2Dcircle
+    - Radius: 2
+    - Position: x=0, y=0, z=12
+    - Ebene: XY
+    
+    SCHRITT 5: 
+    - Benutze Tool: loft
+    - sketchcount: 4
+    
+    SCHRITT 6: Vase aushöhlen (nur Wände übrig lassen)
+    - Benutze Tool: shell_body
+    - Wandstärke (thickness): 0.3
+    - faceindex: 1
+    
+    FERTIG: Jetzt hast du eine schöne Designer-Vase!
     """
-    Erstelle eine Designer-Vase mit Loft-Funktion in Fusion 360 mit folgenden Spezifikationen:
-    """
-    prompt = """
-                Erstelle eine Designer-Vase mit Loft-Funktion:
-
-                1. ERSTER KREIS (Basis):
-                - Radius: 2.5 (25mm)
-                - Position: x=0, y=0, z=0
-                - Ebene: XY
-
-                2. ZWEITER KREIS (Taille):
-                - Radius: 1.5 (15mm)
-                - Position: x=0, y=0, z=4
-                - Ebene: XY
-
-                3. DRITTER KREIS (Bauch):
-                - Radius: 3 (30mm)
-                - Position: x=0, y=0, z=8
-                - Ebene: XY
-
-                4. VIERTER KREIS (Hals):
-                - Radius: 2 (20mm)
-                - Position: x=0, y=0, z=12
-                - Ebene: XY
-
-                5. LOFT:
-                - Sketch-Anzahl: 4
-                - Verbindet alle 4 Kreise zu organischer Form
-
-                6. SHELL BODY (Aushöhlen):
-                - Wandstärke: 0.3 (3mm)
-                - Faceindex: 1 (obere Fläche)
-                - Body: Body1
-            """
-    return prompt
-
 
 
 @mcp.prompt()
 def teil():
-    prompt = """
-                Box erstellen:
-
-                Eine flache Box mit den Maßen:
-                Höhe: 10
-                Breite: 10
-                Tiefe: 0.5
-
-                Löcher hinzufügen:
-
-                Insgesamt 8 Löcher:
-                4 Löcher an den Ecken, leicht eingerückt.
-                4 Löcher näher an der Mitte.
-                Tiefe: 0.2
-                Durchmesser: 0.5
-                Faceindex: 4.
-
-                Mittiges Loch:
-
-                Einen 2D-Kreis zeichnen:
-                Mache ihn bei z = 0
-                Radius: 1
-                Mit Cut-Extrude komplett durch die Box schneiden:
-                Richtung: Nach oben einfach übertreben. Mach einfach +10
-                
-                Sage dem Nutzer, dass er das innere des mittleren lochs auswählen soll
-                Rufe thread funktion auf um ein gewinde zu erstellen
-                mit inside = True
-                allsizes = 10 (für 1/4 Zoll Gewinde)
-                
-                
-                """
-
-    return prompt
+    return """
+    SCHRITT 1: 
+    - Benutze Tool: draw_box
+    - Breite (width_value): "10"
+    - Höhe (height_value): "10"
+    - Tiefe (depth_value): "0.5"
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 2: Kleine Löcher bohren
+    - Benutze Tool: draw_holes
+    - 8 Löcher total: 4 in den Ecken + 4 näher zur Mitte
+    - Beispiel Punkte: [[4,4], [4,-4], [-4,4], [-4,-4], [2,2], [2,-2], [-2,2], [-2,-2]]
+    - Durchmesser (width): 0.5
+    - Tiefe (depth): 0.2
+    - faceindex: 4
+    
+    SCHRITT 3: Kreis in der Mitte zeichnen
+    - Benutze Tool: draw2Dcircle
+    - Radius: 1
+    - Position: x=0, y=0, z=0
+    - Ebene: XY
+    
+    SCHRITT 4: 
+    - Benutze Tool: cut_extrude
+    - Tiefe: +10 (MUSS Positiv SEIN!)
+    
+    SCHRITT 5: Sage dem Nutzer
+    - "Bitte wähle jetzt in Fusion 360 die innere Fläche des mittleren Lochs aus"
+    
+    SCHRITT 6: Gewinde erstellen
+    - Benutze Tool: create_thread
+    - inside: True (Innengewinde)
+    - allsizes: 10 (für 1/4 Zoll Gewinde)
+    
+    FERTIG: Teil mit Löchern und Gewinde ist fertig!
+    """
 
 
 @mcp.prompt()
