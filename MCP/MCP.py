@@ -100,7 +100,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'circle':
             draw_circle(design, ui, task[1], task[2], task[3], task[4],task[5])
         elif task[0] == 'extrude_thin':
-            extrude_thin(design, ui, task[1])
+            extrude_thin(design, ui, task[1],task[2])
         elif task[0] == 'select_body':
             select_body(design, ui, task[1])
         elif task[0] == 'select_sketch':
@@ -122,7 +122,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'draw_sphere':
             create_sphere(design, ui, task[1], task[2], task[3], task[4])
         elif task[0] == 'threaded':
-            thread(design, ui, 0, task[1], task[2], task[3])
+            create_thread(design, ui, task[1], task[2])
         elif task[0] == 'delete_everything':
             delete(design, ui)
         elif task[0] == 'boolean_operation':
@@ -254,10 +254,6 @@ def draw_ellipis(design,ui,x_center,y_center,z_center,
         if ui:
             ui.messageBox('Failed to draw ellipsis:\n{}'.format(traceback.format_exc()))
 
-            
-       
-
-#USELESS
 def draw_circle(design, ui, radius, x, y, z, plane="XY"):
     
     """
@@ -317,6 +313,7 @@ def draw_circle(design, ui, radius, x, y, z, plane="XY"):
     except:
         if ui:
             ui.messageBox('Failed draw_circle:\n{}'.format(traceback.format_exc()))
+
 
 
 
@@ -403,7 +400,7 @@ def offsetplane(design,ui,offset,plane ="XY"):
 
 
 
-def thread(design, ui,faceindex,inside,length,sizes):
+def create_thread(design, ui,inside,sizes):
     """
     
     params:
@@ -428,7 +425,6 @@ def thread(design, ui,faceindex,inside,length,sizes):
         threadType = threadTypes[0]
 
         allsizes = threadDataQuery.allSizes(threadType)
-        sizes = int(sizes)
         
         # allsizes :
         #'1/4', '5/16', '3/8', '7/16', '1/2', '5/8', '3/4', '7/8', '1', '1 1/8', '1 1/4',
@@ -450,10 +446,9 @@ def thread(design, ui,faceindex,inside,length,sizes):
         # get the face the thread will be applied to
     
         
-        # define the thread input with the lenght 3.5 cm
+
         threadInput = threadFeatures.createInput(faces, threadInfo)
-        threadInput.isFullLength = False
-        threadInput.threadLength = adsk.core.ValueInput.createByReal(length)
+        threadInput.isFullLength = True
         
         # create the final thread
         thread = threadFeatures.add(threadInput)
@@ -642,8 +637,8 @@ def boolean_operation(design,ui,op):
         features = rootComp.features
         bodies = rootComp.bRepBodies
 
-        targetBody = bodies.item(1) #select the currently 
-        toolBody = bodies.item(0)   #selected bodyss
+        targetBody = bodies.item(1) # 
+        toolBody = bodies.item(0)   
 
         # Define the required inputs and create te combine feature.
         combineFeatures = rootComp.features.combineFeatures
@@ -693,7 +688,6 @@ def extrude_last_sketch(design, ui, value,taperangle=0):
     Just extrudes the last sketch by the given value
     """
     try:
-        deg = adsk.core.ValueInput.createByString(f"{taperangle} deg")
         rootComp = design.rootComponent 
         sketches = rootComp.sketches
         sketch = sketches.item(sketches.count - 1)  # Letzter Sketch
@@ -702,6 +696,7 @@ def extrude_last_sketch(design, ui, value,taperangle=0):
         extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
         distance = adsk.core.ValueInput.createByReal(value)
         extrudeInput.setDistanceExtent(False, distance)
+        
         extrudes.add(extrudeInput)
     except:
         if ui:
@@ -846,9 +841,12 @@ def undo(design, ui):
 
 
 def delete(design,ui):
+    """
+    Remove every body and sketch from the design so nothing is left
+    """
     try:
         rootComp = design.rootComponent
-
+        sketches = rootComp.sketches
         bodies = rootComp.bRepBodies
         removeFeat = rootComp.features.removeFeatures
 
@@ -856,7 +854,7 @@ def delete(design,ui):
         for i in range(bodies.count - 1, -1, -1): # startet bei bodies.count - 1 und geht in Schritten von -1 bis 0 
             body = bodies.item(i)
             removeFeat.add(body)
-        
+
         
     except:
         if ui:
@@ -903,7 +901,7 @@ def cut_extrude(design,ui,depth):
             ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 
-def extrude_thin(design, ui, thickness=0.5):
+def extrude_thin(design, ui, thickness,distance):
     rootComp = design.rootComponent
     sketches = rootComp.sketches
     
@@ -913,9 +911,9 @@ def extrude_thin(design, ui, thickness=0.5):
     exts = rootComp.features.extrudeFeatures
     extInput = exts.createInput(selectedFace, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
     extInput.setThinExtrude(adsk.fusion.ThinExtrudeWallLocation.Center,
-                            adsk.core.ValueInput.createByReal(1))
+                            adsk.core.ValueInput.createByReal(thickness))
 
-    distanceExtent = adsk.fusion.DistanceExtentDefinition.create(adsk.core.ValueInput.createByReal(5))
+    distanceExtent = adsk.fusion.DistanceExtentDefinition.create(adsk.core.ValueInput.createByReal(distance))
     extInput.setOneSideExtent(distanceExtent, adsk.fusion.ExtentDirections.PositiveExtentDirection)
 
     ext = exts.add(extInput)
@@ -1300,7 +1298,8 @@ class Handler(BaseHTTPRequestHandler):
 
             elif path == '/extrude_thin':
                 thickness = float(data.get('thickness',0.5)) #0.5 as default
-                task_queue.put(('extrude_thin', thickness))
+                distance = float(data.get('distance',1.0)) #1.0 as default
+                task_queue.put(('extrude_thin', thickness,distance))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
@@ -1408,9 +1407,8 @@ class Handler(BaseHTTPRequestHandler):
 
             elif path == '/threaded':
                 inside = bool(data.get('inside', True))
-                allsizes = int(data.get('allsizes', 10))
-                length = float(data.get('length', 5.0))
-                task_queue.put(('threaded', inside, allsizes, length))
+                allsizes = int(data.get('allsizes', 30))
+                task_queue.put(('threaded', inside, allsizes))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
