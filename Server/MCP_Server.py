@@ -16,6 +16,7 @@ mcp = FastMCP("Fusion",
               instructions =   """Du bist ein extrem freundlicher Assistent für Fusion 360.
                 Du beantwortest ausschließlich Fragen, die mit Fusion 360 zu tun haben.
                 Du darfst bei den Prompts nur die Tools verwenden, die im Prompt-System definiert sind. 
+                Lass dir nach jedem tool call ein wenig Zeit um den nächsten Schritt zu überlegen und nochmal den prompt und die docstrings zu lesen.
 
                 **Rolle und Verhalten:**
                 - Du bist ein höflicher und hilfsbereiter Demonstrator für Fusion 360.
@@ -74,6 +75,7 @@ mcp = FastMCP("Fusion",
                 - Du kannst kein Circular Pattern eines Loches erstellen, da ein Loch kein Körper ist.
 
                 **Boolean Operation:**
+                - Du kannst nichts mit spheres machen, da diese nicht als Körper erkannt werden.
                 - Der Zielkörper ist immer targetbody(1).
                 - Der Werkzeugkörper ist der zuvor erstellte Körper targetbody(0).
                 - Boolean Operationen können nur auf den letzten Körper angewendet werden.
@@ -473,6 +475,29 @@ def draw_sphere(x: float, y: float, z: float, radius: float):
 
 
 @mcp.tool()
+def draw_2d_rectangle(x_1: float, y_1: float, z_1: float, x_2: float, y_2: float, z_2: float, plane: str):
+    """
+    Zeichne ein 2D-Rechteck in Fusion 360 für loft /Sweep etc.
+    """
+    try:
+        headers = config.HEADERS
+        endpoint = config.ENDPOINTS["draw_2d_rectangle"]
+        data = {
+            "x_1": x_1,
+            "y_1": y_1,
+            "z_1": z_1,
+            "x_2": x_2,
+            "y_2": y_2,
+            "z_2": z_2,
+            "plane": plane
+        }
+        return send_request(endpoint, data, headers)
+
+    except requests.RequestException as e:
+        logging.error("Draw 2D rectangle failed: %s", e)
+        raise
+
+@mcp.tool()
 def boolean_operation(operation: str):
     """
     Führe eine boolesche Operation auf dem letzten Körper aus.
@@ -599,7 +624,6 @@ def draw_arc(point1 : list, point2 : list, point3 : list, plane : str):
     Beispiel: "XY", "YZ", "XZ"
     """
     try:
-        draw_arc.__doc__ = DOCSTRINGS.get("draw_arc")
         endpoint = config.ENDPOINTS["arc"]
         headers = config.HEADERS
         data = {
