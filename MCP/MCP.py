@@ -127,6 +127,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             delete(design, ui)
         elif task[0] == 'boolean_operation':
             boolean_operation(design,ui,task[1])
+        elif task[0] == 'draw_2d_rectangle':
+            draw_2d_rect(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
 
 
 class TaskThread(threading.Thread):
@@ -253,6 +255,49 @@ def draw_ellipis(design,ui,x_center,y_center,z_center,
     except:
         if ui:
             ui.messageBox('Failed to draw ellipsis:\n{}'.format(traceback.format_exc()))
+
+def draw_2d_rect(design, ui, x_1, y_1, z_1, x_2, y_2, z_2, plane="XY"):
+    rootComp = design.rootComponent
+    sketches = rootComp.sketches
+    planes = rootComp.constructionPlanes
+
+    if plane == "XZ":
+        baseplane = rootComp.xZConstructionPlane
+        if y_1 and y_2 != 0:
+            planeInput = planes.createInput()
+            offsetValue = adsk.core.ValueInput.createByReal(y_1)
+            planeInput.setByOffset(baseplane, offsetValue)
+            offsetPlane = planes.add(planeInput)
+            sketch = sketches.add(offsetPlane)
+        else:
+            sketch = sketches.add(baseplane)
+    elif plane == "YZ":
+        baseplane = rootComp.yZConstructionPlane
+        if x_1 and x_2 != 0:
+            planeInput = planes.createInput()
+            offsetValue = adsk.core.ValueInput.createByReal(x_1)
+            planeInput.setByOffset(baseplane, offsetValue)
+            offsetPlane = planes.add(planeInput)
+            sketch = sketches.add(offsetPlane)
+        else:
+            sketch = sketches.add(baseplane)
+    else:
+        baseplane = rootComp.xYConstructionPlane
+        if z_1 and z_2 != 0:
+            planeInput = planes.createInput()
+            offsetValue = adsk.core.ValueInput.createByReal(z_1)
+            planeInput.setByOffset(baseplane, offsetValue)
+            offsetPlane = planes.add(planeInput)
+            sketch = sketches.add(offsetPlane)
+        else:
+            sketch = sketches.add(baseplane)
+
+    rectangles = sketch.sketchCurves.sketchLines
+    point_1 = adsk.core.Point3D.create(x_1, y_1, z_1)
+    points_2 = adsk.core.Point3D.create(x_2, y_2, z_2)
+    rectangles.addTwoPointRectangle(point_1, points_2)
+
+
 
 def draw_circle(design, ui, radius, x, y, z, plane="XY"):
     
@@ -636,11 +681,11 @@ def boolean_operation(design,ui,op):
         rootComp = design.rootComponent
         features = rootComp.features
         bodies = rootComp.bRepBodies
+       
+        targetBody = bodies.item(0) # target body has to be the first drawn body
+        toolBody = bodies.item(1)   # tool body has to be the second drawn body
 
-        targetBody = bodies.item(1) # 
-        toolBody = bodies.item(0)   
-
-        # Define the required inputs and create te combine feature.
+        
         combineFeatures = rootComp.features.combineFeatures
         tools = adsk.core.ObjectCollection.create()
         tools.add(toolBody)
@@ -872,7 +917,7 @@ def export_as_STEP(design, ui,Name):
         Export_dir_path = os.path.join(FilePath, directory_name, Name)
         os.makedirs(Export_dir_path, exist_ok=True) 
         
-        stepOptions = exportMgr.createSTEPExportOptions(Export_dir_path+ '/test.step')  # Save as Fusion.step in the export directory
+        stepOptions = exportMgr.createSTEPExportOptions(Export_dir_path+ f'/{Name}.step')  # Save as Fusion.step in the export directory
        # stepOptions = exportMgr.createSTEPExportOptions(Export_dir_path)       
         
         
@@ -1428,6 +1473,26 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Boolean Operation wird ausgeführt"}).encode('utf-8'))
+            
+            elif path == '/test_connection':
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Verbindung erfolgreich"}).encode('utf-8'))
+            
+            elif path == '/draw_2d_rectangle':
+                x_1 = float(data.get('x_1',0))
+                y_1 = float(data.get('y_1',0))
+                z_1 = float(data.get('z_1',0))
+                x_2 = float(data.get('x_2',1))
+                y_2 = float(data.get('y_2',1))
+                z_2 = float(data.get('z_2',0))
+                plane = data.get('plane', 'XY')  # 'XY', 'XZ', 'YZ'
+                task_queue.put(('draw_2d_rectangle', x_1, y_1, z_1, x_2, y_2, z_2, plane))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "2D Rechteck wird erstellt"}).encode('utf-8'))
             
             else:
                 self.send_error(404,'Not Found')
