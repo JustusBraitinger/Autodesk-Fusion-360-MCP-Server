@@ -4,7 +4,6 @@ import logging
 import requests
 from mcp.server.fastmcp import FastMCP
 import config
-from docstring import DOCSTRINGS
 
 
 
@@ -530,7 +529,6 @@ def draw_lines(points : list, plane : str):
     Beispiel: "XY", "YZ", "XZ"
     """
     try:
-        draw_lines.__doc__ = DOCSTRINGS.get("draw_lines")
         headers = config.HEADERS
         endpoint = config.ENDPOINTS["draw_lines"]
         data = {
@@ -601,7 +599,6 @@ def revolve(angle : float):
     Wir übergeben den Winkel als Float
     """
     try:
-        revolve.__doc__ = DOCSTRINGS.get("revolve")
         headers = config.HEADERS    
         endpoint = config.ENDPOINTS["revolve"]
         data = {
@@ -648,7 +645,6 @@ def draw_one_line(x1: float, y1: float, z1: float, x2: float, y2: float, z2: flo
     Beispiel: "XY", "YZ", "XZ"
     """
     try:
-        draw_one_line.__doc__ = DOCSTRINGS.get("draw_one_line")
         endpoint = config.ENDPOINTS["draw_one_line"]
         headers = config.HEADERS
         data = {
@@ -665,6 +661,35 @@ def draw_one_line(x1: float, y1: float, z1: float, x2: float, y2: float, z2: flo
     except requests.RequestException as e:
         logging.error("Draw one line failed: %s", e)
         raise
+
+@mcp.tool()
+def rectangular_pattern(plane: str, quantity_one: float, quantity_two: float, distance_one: float, distance_two: float, axis_one: str, axis_two: str):
+    """
+    Du kannst ein Rectangular Pattern (Rechteckmuster) erstellen um Objekte in einer rechteckigen Anordnung zu verteilen.
+    Du musst zwei Mengen (quantity_one, quantity_two) als Float übergeben,
+    zwei Abstände (distance_one, distance_two) als Float übergeben,
+    Die beiden Richtungen sind die axen ( axis_one, axis_two) als String ("X", "Y" oder "Z") und die Ebene als String ("XY", "YZ" oder "XZ").
+    Aus Gründen musst du distance immer mit einer 10 multiplizieren damit es in Fusion 360 stimmt.
+    """
+    try:
+       
+        headers = config.HEADERS
+        endpoint = config.ENDPOINTS["rectangular_pattern"]
+        data = {
+            "plane": plane,
+            "quantity_one": quantity_one,
+            "quantity_two": quantity_two,
+            "distance_one": distance_one,
+            "distance_two": distance_two,
+            "axis_one": axis_one,
+            "axis_two": axis_two
+        }
+        return send_request(endpoint, data, headers)
+
+    except requests.RequestException as e:
+        logging.error("Rectangular pattern failed: %s", e)
+        raise
+
 
 @mcp.tool()
 def circular_pattern(plane: str, quantity: float, axis: str):
@@ -684,7 +709,6 @@ def circular_pattern(plane: str, quantity: float, axis: str):
     Typische Anwendungen: Schraubenlöcher in Kreisform, Zahnrad-Zähne, Lüftungsgitter, dekorative Muster.
     """
     try:
-        circular_pattern.__doc__ = DOCSTRINGS.get("circular_pattern")
         headers = config.HEADERS
         endpoint = config.ENDPOINTS["circular_pattern"]
         data = {
@@ -747,7 +771,6 @@ def draw2Dcircle(radius: float, x: float, y: float, z: float, plane: str = "XY")
     }
     """
     try:
-        draw2Dcircle.__doc__ = DOCSTRINGS.get("draw2Dcircle")
         headers = config.HEADERS
         endpoint = config.ENDPOINTS["draw2Dcircle"]
         data = {
@@ -772,7 +795,6 @@ def loft(sketchcount: int):
     Also zuerst Sketch 1 dann Sketch 2 dann Sketch 3 usw.
     """
     try:
-        loft.__doc__ = DOCSTRINGS.get("loft")
         endpoint = config.ENDPOINTS["loft"]
         headers = config.HEADERS
         data = {
