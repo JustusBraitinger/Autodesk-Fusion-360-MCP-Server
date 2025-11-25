@@ -129,7 +129,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             boolean_operation(design,ui,task[1])
         elif task[0] == 'draw_2d_rectangle':
             draw_2d_rect(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
-
+        elif task[0] == 'rectangular_pattern':
+            rect_pattern(design,ui,task[1],task[2],task[3],task[4],task[5],task[6],task[7])
 
 class TaskThread(threading.Thread):
     def __init__(self, event):
@@ -826,7 +827,66 @@ def revolve_profile(design, ui,  angle=360):
 ##############################################################################################
 
 ###Selection Functions######
+def rect_pattern(design,ui,axis_one ,axis_two ,quantity_one,quantity_two,distance_one,distance_two,plane="XY"):
+    """
+    Creates a rectangular pattern of the last body along the specified axis and plane
+    There are two quantity parameters for two directions
+    There are also two distance parameters for the spacing in two directions
+    params:
+    axis: "X", "Y", or "Z" axis for the pattern direction
+    quantity_one: Number of instances in the first direction
+    quantity_two: Number of instances in the second direction
+    distance_one: Spacing between instances in the first direction
+    distance_two: Spacing between instances in the second direction
+    plane: Construction plane for the pattern ("XY", "XZ", or "YZ")
+    """
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        rectFeats = rootComp.features.rectangularPatternFeatures
 
+
+
+        quantity_one = adsk.core.ValueInput.createByString(f"{quantity_one}")
+        quantity_two = adsk.core.ValueInput.createByString(f"{quantity_two}")
+        distance_one = adsk.core.ValueInput.createByString(f"{distance_one}")
+        distance_two = adsk.core.ValueInput.createByString(f"{distance_two}")
+
+        bodies = rootComp.bRepBodies
+        if bodies.count > 0:
+            latest_body = bodies.item(bodies.count - 1)
+        else:
+            ui.messageBox("Keine Bodies gefunden.")
+        inputEntites = adsk.core.ObjectCollection.create()
+        inputEntites.add(latest_body)
+        baseaxis_one = None    
+        if axis_one == "Y":
+            baseaxis_one = rootComp.yConstructionAxis 
+        elif axis_one == "X":
+            baseaxis_one = rootComp.xConstructionAxis
+        elif axis_one == "Z":
+            baseaxis_one = rootComp.zConstructionAxis
+
+
+        baseaxis_two = None    
+        if axis_two == "Y":
+            baseaxis_two = rootComp.yConstructionAxis  
+        elif axis_two == "X":
+            baseaxis_two = rootComp.xConstructionAxis
+        elif axis_two == "Z":
+            baseaxis_two = rootComp.zConstructionAxis
+
+ 
+
+        rectangularPatternInput = rectFeats.createInput(inputEntites,baseaxis_one, quantity_one, distance_one, adsk.fusion.PatternDistanceType.SpacingPatternDistanceType)
+        #second direction
+        rectangularPatternInput.setDirectionTwo(baseaxis_two,quantity_two, distance_two)
+        rectangularFeature = rectFeats.add(rectangularPatternInput)
+    except:
+        if ui:
+            ui.messageBox('Failed to execute rectangular pattern:\n{}'.format(traceback.format_exc()))
+        
+        
 
 def circular_pattern(design, ui, quantity, axis, plane):
     try:
@@ -1493,6 +1553,22 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "2D Rechteck wird erstellt"}).encode('utf-8'))
+            
+            
+            elif path == '/rectangular_pattern':
+                 quantity_one = float(data.get('quantity_one',2))
+                 distance_one = float(data.get('distance_one',5))
+                 axis_one = str(data.get('axis_one',"X"))
+                 quantity_two = float(data.get('quantity_two',2))
+                 distance_two = float(data.get('distance_two',5))
+                 axis_two = str(data.get('axis_two',"Y"))
+                 plane = str(data.get('plane', 'XY'))  # 'XY', 'XZ', 'YZ'
+                 # Parameter-Reihenfolge: axis_one, axis_two, quantity_one, quantity_two, distance_one, distance_two, plane
+                 task_queue.put(('rectangular_pattern', axis_one, axis_two, quantity_one, quantity_two, distance_one, distance_two, plane))
+                 self.send_response(200)
+                 self.send_header('Content-type','application/json')
+                 self.end_headers()
+                 self.wfile.write(json.dumps({"message": "Rectangular Pattern wird erstellt"}).encode('utf-8'))
             
             else:
                 self.send_error(404,'Not Found')
