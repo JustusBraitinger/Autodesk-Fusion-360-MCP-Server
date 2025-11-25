@@ -195,6 +195,7 @@ Now you will see a list of predetermined Prompts.
 | **Fillet edges** | Rounds sharp edges with a defined **radius** (fillet). |
 | **Shell body** | **Hollows** out the body, leaving a uniform wall thickness. |
 | **Circular pattern** | Creates a **circular pattern** (array) of features or bodies around an axis. |
+| **Rectangular pattern**| Creates a **rectangular pattern** of a body|
 
 
 ---
