@@ -35,7 +35,10 @@ ENDPOINTS = {
     "draw_sphere": f"{BASE_URL}/sphere",
     "threaded": f"{BASE_URL}/threaded",
     "delete_everything": f"{BASE_URL}/delete_everything",
-    "boolean_operation": f"{BASE_URL}/boolean_operation"
+    "boolean_operation": f"{BASE_URL}/boolean_operation",
+    "draw_2d_rectangle": f"{BASE_URL}/draw_2d_rectangle",
+    "rectangular_pattern": f"{BASE_URL}/rectangular_pattern",
+    "draw_text": f"{BASE_URL}/draw_text"
     
 }
 
