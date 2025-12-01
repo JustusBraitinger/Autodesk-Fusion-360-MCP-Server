@@ -553,6 +553,34 @@ def extrude(value: float):
     except requests.RequestException as e:
         logging.error("Extrude failed: %s", e)
         raise
+
+
+@mcp.tool()
+def draw_text(text: str, plane: str, x_1: float, y_1: float, z_1: float, x_2: float, y_2: float, z_2: float, thickness: float,value: float):
+    """
+    Zeichne einen Text in Fusion 360 der ist ein Sketch also kannst dz  ann extruden
+    Mit value kannst du angeben wie weit du den text extrudieren willst
+    """
+    try:
+        headers = config.HEADERS
+        endpoint = config.ENDPOINTS["draw_text"]
+        data = {
+            "text": text,
+            "plane": plane,
+            "x_1": x_1,
+            "y_1": y_1,
+            "z_1": z_1,
+            "x_2": x_2,
+            "y_2": y_2,
+            "z_2": z_2,
+            "thickness": thickness,
+            "extrusion_value": value
+        }
+        return send_request(endpoint, data, headers)
+    except requests.RequestException as e:
+        logging.error("Draw text failed: %s", e)
+        raise
+
 @mcp.tool()
 def extrude_thin(thickness :float, distance : float):
     """
