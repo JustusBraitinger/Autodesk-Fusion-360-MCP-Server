@@ -177,6 +177,7 @@ Now you will see a list of predetermined Prompts.
 | **Spline** | Draws a **Spline curve** through a list of 3D points (used for sweep path). |
 | **Draw box** | Creates a **box** (solid body) with definable dimensions and position. |
 | **Draw cylinder** | Draws a **cylinder** (solid body). |
+| **Draw text**| Draws a text and extrudes it with given values |
 | **Draw Witzenmann logo** | A **fun demo function** for creating the Witzenmann logo. |
 
 ---
