@@ -131,6 +131,9 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             draw_2d_rect(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7])
         elif task[0] == 'rectangular_pattern':
             rect_pattern(design,ui,task[1],task[2],task[3],task[4],task[5],task[6],task[7])
+        elif task[0] == 'draw_text':
+            draw_text(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7], task[8], task[9],task[10])
+
 
 class TaskThread(threading.Thread):
     def __init__(self, event):
@@ -149,6 +152,41 @@ class TaskThread(threading.Thread):
 
 ###Geometry Functions######
 
+def draw_text(design, ui, text, thickness,
+              x_1, y_1, z_1, x_2, y_2, z_2, extrusion_value,plane="XY"):
+    
+    try:
+        rootComp = design.rootComponent
+        sketches = rootComp.sketches
+        
+        if plane == "XY":
+            sketch = sketches.add(rootComp.xYConstructionPlane)
+        elif plane == "XZ":
+            sketch = sketches.add(rootComp.xZConstructionPlane)
+        elif plane == "YZ":
+            sketch = sketches.add(rootComp.yZConstructionPlane)
+        point_1 = adsk.core.Point3D.create(x_1, y_1, z_1)
+        point_2 = adsk.core.Point3D.create(x_2, y_2, z_2)
+
+        texts = sketch.sketchTexts
+        input = texts.createInput2(f"{text}",thickness)
+        input.setAsMultiLine(point_1,
+                             point_2,
+                             adsk.core.HorizontalAlignments.LeftHorizontalAlignment,
+                             adsk.core.VerticalAlignments.TopVerticalAlignment, 0)
+        sketchtext = texts.add(input)
+        extrudes = rootComp.features.extrudeFeatures
+        
+        extInput = extrudes.createInput(sketchtext, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
+        distance = adsk.core.ValueInput.createByReal(extrusion_value)
+        extInput.setDistanceExtent(False, distance)
+        extInput.isSolid = True
+        
+        # Create the extrusion
+        ext = extrudes.add(extInput)
+    except:
+        if ui:
+            ui.messageBox('Failed draw_text:\n{}'.format(traceback.format_exc()))
 def create_sphere(design, ui, radius, x, y, z):
     try:
         rootComp = design.rootComponent
@@ -1117,9 +1155,13 @@ def get_model_parameters(design):
     user_params = design.userParameters
     for param in design.allParameters:
         if all(user_params.item(i) != param for i in range(user_params.count)):
+            try:
+                wert = str(param.value)
+            except Exception:
+                wert = ""
             model_params.append({
                 "Name": str(param.name),
-                "Wert": str(param.value),
+                "Wert": wert,
                 "Einheit": str(param.unit),
                 "Expression": str(param.expression) if param.expression else ""
             })
@@ -1569,6 +1611,23 @@ class Handler(BaseHTTPRequestHandler):
                  self.send_header('Content-type','application/json')
                  self.end_headers()
                  self.wfile.write(json.dumps({"message": "Rectangular Pattern wird erstellt"}).encode('utf-8'))
+                 
+            elif path == '/draw_text':
+                 text = str(data.get('text',"Hello"))
+                 x_1 = float(data.get('x_1',0))
+                 y_1 = float(data.get('y_1',0))
+                 z_1 = float(data.get('z_1',0))
+                 x_2 = float(data.get('x_2',10))
+                 y_2 = float(data.get('y_2',4))
+                 z_2 = float(data.get('z_2',0))
+                 extrusion_value = float(data.get('extrusion_value',1.0))
+                 plane = str(data.get('plane', 'XY'))  # 'XY', 'XZ', 'YZ'
+                 thickness = float(data.get('thickness',0.5))
+                 task_queue.put(('draw_text', text,thickness, x_1, y_1, z_1, x_2, y_2, z_2, extrusion_value, plane))
+                 self.send_response(200)
+                 self.send_header('Content-type','application/json')
+                 self.end_headers()
+                 self.wfile.write(json.dumps({"message": "Text wird erstellt"}).encode('utf-8'))
             
             else:
                 self.send_error(404,'Not Found')
