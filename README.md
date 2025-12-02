@@ -266,4 +266,4 @@ Fusion API limitations:
 **This is a proof-of-concept, not production software.**
 
 ## Contact
-brju1032@h-ka.de
+justus@braitinger.org
