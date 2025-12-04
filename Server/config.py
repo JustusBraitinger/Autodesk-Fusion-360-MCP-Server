@@ -38,7 +38,8 @@ ENDPOINTS = {
     "boolean_operation": f"{BASE_URL}/boolean_operation",
     "draw_2d_rectangle": f"{BASE_URL}/draw_2d_rectangle",
     "rectangular_pattern": f"{BASE_URL}/rectangular_pattern",
-    "draw_text": f"{BASE_URL}/draw_text"
+    "draw_text": f"{BASE_URL}/draw_text",
+    "move_body": f"{BASE_URL}/move_body",
     
 }
 
