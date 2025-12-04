@@ -118,6 +118,21 @@ def send_request(endpoint, data, headers):
             raise
 
 @mcp.tool()
+def move_latest_body(x : float,y:float,z:float):
+    """
+    Du kannst den letzten Körper in Fusion 360 verschieben in x,y und z Richtung
+    
+    """
+    endpoint = config.ENDPOINTS["move_body"]
+    payload = {
+        "x": x,
+        "y": y,
+        "z": z
+    }
+    headers = config.HEADERS
+    return send_request(endpoint, payload, headers)
+
+@mcp.tool()
 def create_thread(inside: bool, allsizes: int):
     """Erstellt ein Gewinde in Fusion 360
     Im Moment wählt der User selber in Fusioibn 360 das Profil aus
