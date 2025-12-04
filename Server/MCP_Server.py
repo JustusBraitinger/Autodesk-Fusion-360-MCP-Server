@@ -555,12 +555,16 @@ def draw_lines(points : list, plane : str):
         logging.error("Draw lines failed: %s", e)
 
 @mcp.tool()
-def extrude(value: float):
-    """Extrudiert die letzte Skizze um einen angegebenen Wert."""
+def extrude(value: float,angle:float):
+    """Extrudiert die letzte Skizze um einen angegebenen Wert.
+    Du kannst auch einen Winkel angeben
+    
+    """
     try:
         url = config.ENDPOINTS["extrude"]
         data = {
-            "value": value
+            "value": value,
+            "taperangle": angle
         }
         data = json.dumps(data)
         response = requests.post(url, data, headers=config.HEADERS)
