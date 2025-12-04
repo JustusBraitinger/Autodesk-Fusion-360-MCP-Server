@@ -83,7 +83,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
         elif task[0] == 'draw_lines':
             draw_lines(design, ui, task[1], task[2])
         elif task[0] == 'extrude_last_sketch':
-            extrude_last_sketch(design, ui, task[1])
+            extrude_last_sketch(design, ui, task[1],task[2])
         elif task[0] == 'revolve_profile':
             # 'rootComp = design.rootComponent
             # sketches = rootComp.sketches
@@ -135,6 +135,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             draw_text(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7], task[8], task[9],task[10])
         elif task[0] == 'move_body':
             move_last_body(design,ui,task[1],task[2],task[3])
+        
 
 
 class TaskThread(threading.Thread):
@@ -798,7 +799,7 @@ def sweep(design,ui):
         sweeps.add(sweepInput)
 
 
-def extrude_last_sketch(design, ui, value,taperangle=0):
+def extrude_last_sketch(design, ui, value,taperangle):
     """
     Just extrudes the last sketch by the given value
     """
@@ -810,7 +811,14 @@ def extrude_last_sketch(design, ui, value,taperangle=0):
         extrudes = rootComp.features.extrudeFeatures
         extrudeInput = extrudes.createInput(prof, adsk.fusion.FeatureOperations.NewBodyFeatureOperation)
         distance = adsk.core.ValueInput.createByReal(value)
-        extrudeInput.setDistanceExtent(False, distance)
+        
+        if taperangle != 0:
+            taperValue = adsk.core.ValueInput.createByString(f'{taperangle} deg')
+     
+            extent_distance = adsk.fusion.DistanceExtentDefinition.create(distance)
+            extrudeInput.setOneSideExtent(extent_distance, adsk.fusion.ExtentDirections.PositiveExtentDirection, taperValue)
+        else:
+            extrudeInput.setDistanceExtent(False, distance)
         
         extrudes.add(extrudeInput)
     except:
@@ -1407,7 +1415,8 @@ class Handler(BaseHTTPRequestHandler):
             
             elif path == '/extrude_last_sketch':
                 value = float(data.get('value',1.0)) #1.0 as default
-                task_queue.put(('extrude_last_sketch', value))
+                taperangle = float(data.get('taperangle')) #0.0 as default
+                task_queue.put(('extrude_last_sketch', value,taperangle))
                 self.send_response(200)
                 self.send_header('Content-type','application/json')
                 self.end_headers()
