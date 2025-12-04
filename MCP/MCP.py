@@ -133,6 +133,8 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
             rect_pattern(design,ui,task[1],task[2],task[3],task[4],task[5],task[6],task[7])
         elif task[0] == 'draw_text':
             draw_text(design, ui, task[1], task[2], task[3], task[4], task[5], task[6], task[7], task[8], task[9],task[10])
+        elif task[0] == 'move_body':
+            move_last_body(design,ui,task[1],task[2],task[3])
 
 
 class TaskThread(threading.Thread):
@@ -458,6 +460,35 @@ def draw_Witzenmann(design, ui,scaling,z):
             ui.messageBox('Failed draw_Witzenmann:\n{}'.format(traceback.format_exc()))
 ##############################################################################################
 ###2D Geometry Functions######
+
+
+def move_last_body(design,ui,x,y,z):
+    
+    try:
+        rootComp = design.rootComponent
+        features = rootComp.features
+        sketches = rootComp.sketches
+        moveFeats = features.moveFeatures
+        body = rootComp.bRepBodies
+        bodies = adsk.core.ObjectCollection.create()
+        
+        if body.count > 0:
+                latest_body = body.item(body.count - 1)
+                bodies.add(latest_body)
+        else:
+            ui.messageBox("Keine Bodies gefunden.")
+            return
+
+        vector = adsk.core.Vector3D.create(x,y,z)
+        transform = adsk.core.Matrix3D.create()
+        transform.translation = vector
+        moveFeatureInput = moveFeats.createInput2(bodies)
+        moveFeatureInput.defineAsFreeMove(transform)
+        moveFeats.add(moveFeatureInput)
+    except:
+        if ui:
+            ui.messageBox('Failed to move the body:\n{}'.format(traceback.format_exc()))
+
 
 def offsetplane(design,ui,offset,plane ="XY"):
 
@@ -1628,6 +1659,16 @@ class Handler(BaseHTTPRequestHandler):
                  self.send_header('Content-type','application/json')
                  self.end_headers()
                  self.wfile.write(json.dumps({"message": "Text wird erstellt"}).encode('utf-8'))
+                 
+            elif path == '/move_body':
+                x = float(data.get('x',0))
+                y = float(data.get('y',0))
+                z = float(data.get('z',0))
+                task_queue.put(('move_body', x, y, z))
+                self.send_response(200)
+                self.send_header('Content-type','application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"message": "Body wird verschoben"}).encode('utf-8'))
             
             else:
                 self.send_error(404,'Not Found')
