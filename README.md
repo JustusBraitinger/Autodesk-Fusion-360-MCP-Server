@@ -14,6 +14,7 @@ Fusion MCP Integration bridges AI assistants with Autodesk Fusion 360 through th
 - 🎓 **Accessible CAD** - Lower the barrier for non-CAD users
 
 > **Note:** This is designed as an assistive tool and educational project, not a replacement for professional CAD workflows.
+> Projects like this can assist people with no experience in CAD workflows.
 
 > **Goal:** Enable conversational CAD and AI-driven automation in Fusion.
 
