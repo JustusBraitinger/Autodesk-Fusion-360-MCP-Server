@@ -38,23 +38,10 @@ git clone https://github.com/JustusBraitinger/FusionMCP
 ```
 ## Installing the MCP Add-In for Fusion 360
 
-Follow these steps to install the MCP Add-In correctly:
-
-1. **Move the MCP folder**  
-   - Copy the entire `MCP` folder into Fusion 360's Add-In folder:  
-     ```
-     C:\Users\<YourUsername>\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\AddIns
-     ```
-
-2. **Delete the old MCP folder**  
-   - If there is still an `MCP` folder inside the `FusionMCP` folder, delete it.
-
-3. **Open Fusion 360**  
-   - Start Fusion 360.
-
-4. **Check the Add-In**  
-   - Go to **Utilities → Add-Ins**.  
-   - The MCP Add-In should now be visible in the list.
+```bash
+cd FusionMCP
+python Install_Addin.py
+```
 
 > **Important:** Do **NOT** start the Add-In yet.
 
@@ -62,7 +49,6 @@ Follow these steps to install the MCP Add-In correctly:
 
 ## Install Python Dependencies
 ```bash
-cd FusionMCP
 cd Server
 python -m venv venv
 ```
