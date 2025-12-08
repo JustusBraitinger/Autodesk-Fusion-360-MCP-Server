@@ -36,12 +36,7 @@ It shows how MCP can act as a bridge between AI-driven tools and Fusion's modeli
 ```bash
 git clone https://github.com/JustusBraitinger/FusionMCP
 ```
-## Installing the MCP Add-In for Fusion 360
 
-```bash
-cd FusionMCP
-python Install_Addin.py
-```
 
 > **Important:** Do **NOT** start the Add-In yet.
 
@@ -65,7 +60,12 @@ python -m venv venv
 pip install -r requirements.txt
 pip install "mcp[cli]"
 ```
+## Installing the MCP Add-In for Fusion 360
 
+```bash
+cd ..
+python Install_Addin.py
+```
 ---
 
 ## Connect to Claude
