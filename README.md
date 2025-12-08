@@ -4,12 +4,16 @@
 https://github.com/user-attachments/assets/46c8140e-377d-4618-a304-03861cb3d7d9
 
 
-## Motivation
-This project demonstrates the potential of the MCP protocol when integrated with Autodesk Fusion 360.  
-It shows how MCP can act as a bridge between AI-driven tools and Fusion's modeling environment, enabling:
-- Automated geometry generation  
-- Parameter control  
-- Interactive workflows  
+## 🎯 About
+
+Fusion MCP Integration bridges AI assistants with Autodesk Fusion 360 through the Model Context Protocol (MCP). This enables:
+
+- ✨ **Conversational CAD** - Create 3D models using natural language
+- 🤖 **AI-Driven Automation** - Automate repetitive modeling tasks
+- 🔧 **Parametric Control** - Dynamically modify design parameters
+- 🎓 **Accessible CAD** - Lower the barrier for non-CAD users
+
+> **Note:** This is designed as an assistive tool and educational project, not a replacement for professional CAD workflows.
 
 > **Goal:** Enable conversational CAD and AI-driven automation in Fusion.
 
@@ -235,7 +239,15 @@ Now you will see a list of predetermined Prompts.
   - Task queue
 
 ---
+### Why This Architecture?
 
+The Fusion 360 API is **not thread-safe** and requires all operations to run on the main UI thread. Our solution:
+
+1. **Event-Driven Design** - Use Fusion's CustomEvent system
+2. **Task Queue** - Queue operations for sequential execution
+3. **Async Bridge** - HTTP server handles async MCP requests
+
+   
 ## Security Considerations 🔒
 - Local execution → safe by default
 - Currently HTTP (OK locally, insecure on networks)
@@ -244,11 +256,21 @@ Now you will see a list of predetermined Prompts.
 
 ---
 
-## Disclaimer
-Fusion API limitations:
-- Not thread-safe
-- Not designed for async MCP workflows
-- Documentation outdated in places
+### This is NOT
+
+- ❌ A production-ready tool
+- ❌ A replacement for professional CAD software
+- ❌ Suitable for critical engineering work
+- ❌ Officially supported by Autodesk
+
+### This IS
+
+- ✅ A proof-of-concept
+- ✅ An educational project
+- ✅ A demonstration of MCP capabilities
+- ✅ A tool for rapid prototyping and learning
+
+---
 
 **This is a proof-of-concept, not production software.**
 
