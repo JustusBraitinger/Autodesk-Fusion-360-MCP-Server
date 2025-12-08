@@ -71,6 +71,7 @@ python Install_Addin.py
 ## Connect to Claude
 The most simple way to add the MCP-Server to Claude Desktop is to run following command:  
 ```bash
+cd Server
 uv run mcp install MCP_Server.py
 ```
 The output should be like this:    
