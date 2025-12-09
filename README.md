@@ -152,17 +152,19 @@ http://127.0.0.1:8000/sse
 ---
 
 ## Try It Out 😄
-
+Activate the Fusion Addin inside Fusion
+### Configured in VS-Code:
 Start the server:
 ```bash
 python MCP_Server.py
 ```
-
-Then in VS Code, type:
+Then type   
 ```
 /mcp.FusionMCP
 ```
 Now you will see a list of predetermined Prompts.   
+### Configured in Claude   
+Just open Claude, an ask for the FusionMCP
 
 ---
 
