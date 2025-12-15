@@ -277,5 +277,13 @@ The Fusion 360 API is **not thread-safe** and requires all operations to run on 
 
 **This is a proof-of-concept, not production software.**
 
+
+# If you want it to build yourself   
+- Use Websocket instead of plain HTTP
+- Find a way to tell the llm the retarded faceindecies and body names
+- 
+
+
+
 ## Contact
 justus@braitinger.org
