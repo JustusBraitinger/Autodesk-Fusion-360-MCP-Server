@@ -1,11 +1,11 @@
 {
 	"autodeskProduct":	"Fusion",
 	"type":	"addin",
-	"author":	"",
+	"author":	"FusionMCP Contributors",
 	"description":	{
-		"":	""
+		"":	"MCP integration for AI-driven CAD - enables conversational 3D modeling with any MCP-compatible AI assistant"
 	},
-	"version":	"",
+	"version":	"1.0.0",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true,

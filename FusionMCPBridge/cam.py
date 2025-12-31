@@ -65,43 +65,60 @@ def _get_operation_type(operation: adsk.cam.Operation) -> str:
 
 
 
-def _get_tool_name_from_operation(operation: adsk.cam.Operation) -> str:
+def _get_tool_data_from_operation(operation: adsk.cam.Operation) -> dict:
     """
-    Extract the tool name from an operation.
+    Extract comprehensive tool data from an operation.
     
     Args:
         operation: The CAM operation
         
     Returns:
-        str: The tool name or "No tool" if not available
+        dict: Tool data including name, id, diameter, length, etc.
     """
     try:
-        tool = operation.tool
-        if tool:
-            return tool.description if tool.description else tool.name
-        return "No tool"
-    except Exception:
-        return "No tool"
-
-
-def _get_tool_id_from_operation(operation: adsk.cam.Operation) -> Optional[str]:
-    """
-    Extract the tool ID from an operation.
-    
-    Args:
-        operation: The CAM operation
+        # Try multiple ways to access the tool
+        tool = None
         
-    Returns:
-        str | None: The tool ID or None if not available
-    """
-    try:
-        tool = operation.tool
-        if tool:
-            # Use the tool's entity token as a unique identifier
-            return tool.entityToken if hasattr(tool, 'entityToken') else str(id(tool))
-        return None
-    except Exception:
-        return None
+        # Method 1: Direct tool property
+        if hasattr(operation, 'tool') and operation.tool:
+            tool = operation.tool
+        
+        # Method 2: Through parameters
+        elif hasattr(operation, 'parameters'):
+            params = operation.parameters
+            for param_idx in range(params.count):
+                param = params.item(param_idx)
+                if param.name == "tool_tool" and hasattr(param, 'value'):
+                    tool = param.value
+                    break
+        
+        if not tool:
+            return {"name": "No tool found", "id": None, "debug": "Tool object is None"}
+        
+        tool_data = {
+            "name": getattr(tool, 'description', None) or getattr(tool, 'name', 'Unknown tool'),
+            "id": getattr(tool, 'entityToken', None) or str(id(tool)),
+            "type": getattr(tool, 'toolType', 'unknown'),
+            "debug": f"Tool object type: {type(tool).__name__}"
+        }
+        
+        # Add tool geometry if available
+        if hasattr(tool, 'parameters'):
+            params = tool.parameters
+            if params:
+                for param_idx in range(params.count):
+                    param = params.item(param_idx)
+                    param_name = param.name
+                    if "diameter" in param_name.lower():
+                        tool_data["diameter"] = getattr(param.value, 'value', param.value) if hasattr(param, 'value') else None
+                    elif "length" in param_name.lower() and "body" in param_name.lower():
+                        tool_data["length"] = getattr(param.value, 'value', param.value) if hasattr(param, 'value') else None
+                    elif "flute" in param_name.lower():
+                        tool_data["flute_length"] = getattr(param.value, 'value', param.value) if hasattr(param, 'value') else None
+        
+        return tool_data
+    except Exception as e:
+        return {"name": "Error accessing tool", "id": None, "error": str(e), "debug": f"Exception: {type(e).__name__}"}
 
 
 def list_all_toolpaths(cam: adsk.cam.CAM) -> dict:
@@ -158,12 +175,13 @@ def list_all_toolpaths(cam: adsk.cam.CAM) -> dict:
                 for op_idx in range(operations.count):
                     operation = operations.item(op_idx)
                     
+                    tool_data = _get_tool_data_from_operation(operation)
+                    
                     toolpath_data = {
                         "id": operation.entityToken if hasattr(operation, 'entityToken') else f"op_{setup_idx}_{op_idx}",
                         "name": operation.name,
                         "type": _get_operation_type(operation),
-                        "tool_name": _get_tool_name_from_operation(operation),
-                        "tool_id": _get_tool_id_from_operation(operation),
+                        "tool": tool_data,
                         "is_valid": operation.isValid if hasattr(operation, 'isValid') else True
                     }
                     
@@ -182,12 +200,13 @@ def list_all_toolpaths(cam: adsk.cam.CAM) -> dict:
                                 for op_idx in range(folder_ops.count):
                                     operation = folder_ops.item(op_idx)
                                     
+                                    tool_data = _get_tool_data_from_operation(operation)
+                                    
                                     toolpath_data = {
                                         "id": operation.entityToken if hasattr(operation, 'entityToken') else f"op_{setup_idx}_f{folder_idx}_{op_idx}",
                                         "name": operation.name,
                                         "type": _get_operation_type(operation),
-                                        "tool_name": _get_tool_name_from_operation(operation),
-                                        "tool_id": _get_tool_id_from_operation(operation),
+                                        "tool": tool_data,
                                         "is_valid": operation.isValid if hasattr(operation, 'isValid') else True
                                     }
                                     

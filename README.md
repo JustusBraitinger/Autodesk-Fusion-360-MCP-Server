@@ -67,10 +67,21 @@ pip install "mcp[cli]"
 ```
 ## Installing the MCP Add-In for Fusion 360
 
+### For Development (Recommended)
+Creates a symbolic link for live editing without reinstalling:
 ```bash
 cd ..
-python Install_Addin.py
+python3 Install_Addin_Symlink.py
 ```
+
+### For Distribution
+Copies files to the add-in directory:
+```bash
+cd ..
+python3 Install_Addin_Fixed.py
+```
+
+> **Development Tip:** Use the symlink installer during development. Any code changes will be immediately available in Fusion after restarting the add-in.
 ---
 
 ## Connect to Claude

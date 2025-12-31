@@ -12,7 +12,9 @@
     "*"
   ],
   "toolAliases": {},
-  "allowedTools": [],
+  "allowedTools": [
+    "@FusionMCP/*"
+  ],
   "resources": [
     "file://AGENTS.md",
     "file://README.md"

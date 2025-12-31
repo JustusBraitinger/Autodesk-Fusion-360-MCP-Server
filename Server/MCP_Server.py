@@ -12,6 +12,7 @@ import logging
 import requests
 from mcp.server.fastmcp import FastMCP
 import config
+import interceptor
 
 
 
@@ -107,12 +108,8 @@ def send_request(endpoint, data, headers):
             data = json.dumps(data)
             response = requests.post(endpoint, data, headers, timeout=10)
 
-            # Check if the response is valid JSON
-            try:
-                return response.json()
-            except json.JSONDecodeError as e:
-                logging.error("Failed to decode JSON response: %s", e)
-                raise
+            # Use interceptor to optionally log and return JSON response
+            return interceptor.intercept_response(endpoint, response, "POST")
 
         except requests.RequestException as e:
             logging.error("Request failed on attempt %d: %s", attempt + 1, e)
@@ -165,6 +162,51 @@ def create_thread(inside: bool, allsizes: int):
     except Exception as e:
         logging.error("Create thread failed: %s", e)
         raise
+
+@mcp.tool()
+def toggle_response_interceptor():
+    """
+    Toggle the response interceptor for debugging HTTP communication.
+    
+    When enabled, the interceptor logs all HTTP responses from Fusion 360 to the console
+    with formatted JSON output, endpoint URLs, and HTTP methods. This is useful for
+    debugging communication issues between the MCP Server and Fusion 360 Add-In.
+    
+    The interceptor is disabled by default. Each call toggles the state:
+    - If disabled → becomes enabled
+    - If enabled → becomes disabled
+    
+    Returns:
+        dict: Contains the new state after toggling
+            - enabled (bool): True if interceptor is now enabled, False if disabled
+            - message (str): Human-readable status message
+    
+    Example response when enabling:
+    {
+        "enabled": true,
+        "message": "Response interceptor enabled. HTTP responses will be logged to console."
+    }
+    
+    Example response when disabling:
+    {
+        "enabled": false,
+        "message": "Response interceptor disabled. HTTP responses will not be logged."
+    }
+    
+    Requirements: 4.1, 4.2
+    """
+    new_state = interceptor.toggle_interceptor()
+    
+    if new_state:
+        message = "Response interceptor enabled. HTTP responses will be logged to console."
+    else:
+        message = "Response interceptor disabled. HTTP responses will not be logged."
+    
+    return {
+        "enabled": new_state,
+        "message": message
+    }
+
 
 @mcp.tool()
 def test_connection():
@@ -908,7 +950,7 @@ def list_cam_toolpaths():
     try:
         endpoint = config.ENDPOINTS["cam_toolpaths"]
         response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
-        return response.json()
+        return interceptor.intercept_response(endpoint, response, "GET")
     except requests.ConnectionError:
         return {
             "error": True,
@@ -984,7 +1026,7 @@ def get_toolpath_details(toolpath_id: str):
     try:
         endpoint = f"{config.ENDPOINTS['cam_toolpath']}/{toolpath_id}"
         response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
-        return response.json()
+        return interceptor.intercept_response(endpoint, response, "GET")
     except requests.ConnectionError:
         return {
             "error": True,
@@ -1117,7 +1159,7 @@ def get_tool_info(tool_id: str):
     try:
         endpoint = f"{config.ENDPOINTS['cam_tool']}/{tool_id}"
         response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
-        return response.json()
+        return interceptor.intercept_response(endpoint, response, "GET")
     except requests.ConnectionError:
         return {
             "error": True,

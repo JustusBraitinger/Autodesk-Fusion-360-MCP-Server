@@ -12,7 +12,7 @@ else:  # macOS
 
 # Use current directory instead of hardcoded path
 current_dir = os.path.dirname(os.path.abspath(__file__))
-source_folder = os.path.join(current_dir, "MCP")
+source_folder = os.path.join(current_dir, "FusionMCPBridge")
 
 print(f"Getting the folder from {source_folder}")
 print(f"Installing the add-in to {addin_path}")
