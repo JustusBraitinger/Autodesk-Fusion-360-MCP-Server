@@ -1,7 +1,7 @@
 # Fusion 360 API Configuration
 
 # Base URL für den Fusion 360 Server
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:5001"
 
 # API Endpoints
 ENDPOINTS = {

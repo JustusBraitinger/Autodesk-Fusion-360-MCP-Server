@@ -1,3 +1,11 @@
+import os
+import urllib3
+
+# Disable SSL warnings and proxy for localhost
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+os.environ['NO_PROXY'] = 'localhost,127.0.0.1'
+os.environ['no_proxy'] = 'localhost,127.0.0.1'
+
 import argparse
 import json
 import logging
@@ -855,6 +863,285 @@ def loft(sketchcount: int):
 
 
 
+
+# ============================================================================
+# CAM (Computer-Aided Manufacturing) Tools
+# ============================================================================
+
+@mcp.tool()
+def list_cam_toolpaths():
+    """
+    You can list all CAM toolpath operations in the current Fusion 360 document.
+    
+    This is typically the first tool you call when working with CAM data.
+    Use this to discover what operations exist before inspecting specific toolpath parameters.
+    
+    Each toolpath includes: id, name, operation type, tool name, and validity status.
+    Toolpaths are organized by their parent setup.
+    
+    IMPORTANT: If no CAM data exists in the document, you'll get an empty list with a message.
+    
+    Example response:
+    {
+        "setups": [
+            {
+                "id": "setup_001",
+                "name": "Setup1",
+                "toolpaths": [
+                    {
+                        "id": "op_001",
+                        "name": "Adaptive1",
+                        "type": "adaptive",
+                        "tool_name": "6mm Flat Endmill",
+                        "tool_id": "tool_001",
+                        "is_valid": true
+                    }
+                ]
+            }
+        ],
+        "total_count": 1,
+        "message": null
+    }
+    
+    Typical use cases: Getting an overview of machining operations, finding toolpath IDs for further inspection.
+    """
+    try:
+        endpoint = config.ENDPOINTS["cam_toolpaths"]
+        response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
+        return response.json()
+    except requests.ConnectionError:
+        return {
+            "error": True,
+            "message": "Cannot connect to Fusion 360. Ensure the add-in is running.",
+            "code": "CONNECTION_ERROR"
+        }
+    except requests.Timeout:
+        return {
+            "error": True,
+            "message": "Request to Fusion 360 timed out. The add-in may be busy.",
+            "code": "TIMEOUT_ERROR"
+        }
+    except Exception as e:
+        logging.error("List CAM toolpaths failed: %s", e)
+        return {
+            "error": True,
+            "message": f"Failed to list toolpaths: {str(e)}",
+            "code": "UNKNOWN_ERROR"
+        }
+
+
+@mcp.tool()
+def get_toolpath_details(toolpath_id: str):
+    """
+    You can get detailed parameters for a specific CAM toolpath operation.
+    
+    Use this after list_cam_toolpaths() to inspect the full parameters of a specific operation.
+    You need the toolpath_id from the list_cam_toolpaths response.
+    
+    Returns feeds/speeds, geometry settings, heights, tool information, and tool settings.
+    Each parameter includes: value, unit, type, constraints, and whether it's editable.
+    
+    IMPORTANT: The toolpath_id must match exactly what was returned by list_cam_toolpaths.
+    If the toolpath doesn't exist, you'll get a TOOLPATH_NOT_FOUND error.
+    
+    Parameters returned include:
+    - feeds_and_speeds: spindle_speed, cutting_feedrate, plunge_feedrate, ramp_feedrate
+    - geometry: stepover, stepdown, tolerance, stock_to_leave
+    - heights: clearance_height, retract_height, feed_height
+    - tool_settings: Preset cutting parameters from the tool library (see below)
+    
+    Tool Settings Section:
+    The response includes a tool_settings section with preset cutting parameters stored
+    in the tool library. These are the manufacturer or user-defined defaults for the tool:
+    - preset_spindle_speed: Default spindle speed in RPM (e.g., 10000)
+    - surface_speed: Recommended surface speed in m/min (e.g., 200)
+    - feed_per_tooth: Feed per tooth in mm (e.g., 0.05)
+    - ramp_spindle_speed: Spindle speed for ramping moves in RPM (e.g., 8000)
+    - plunge_spindle_speed: Spindle speed for plunge moves in RPM (e.g., 5000)
+    - feed_per_revolution: Feed per revolution in mm/rev (e.g., 0.2)
+    
+    Example tool_settings in response:
+    {
+        "tool_settings": {
+            "preset_spindle_speed": {"value": 10000, "unit": "rpm", "type": "numeric"},
+            "surface_speed": {"value": 200, "unit": "m/min", "type": "numeric"},
+            "feed_per_tooth": {"value": 0.05, "unit": "mm", "type": "numeric"},
+            "ramp_spindle_speed": {"value": 8000, "unit": "rpm", "type": "numeric"},
+            "plunge_spindle_speed": {"value": 5000, "unit": "rpm", "type": "numeric"},
+            "feed_per_revolution": {"value": 0.2, "unit": "mm/rev", "type": "numeric"}
+        }
+    }
+    
+    Example request:
+    {
+        "toolpath_id": "op_001"
+    }
+    
+    Typical use cases: Analyzing current machining parameters, comparing operation parameters
+    against tool presets, preparing to suggest optimizations, checking if parameters are 
+    editable before attempting modification.
+    """
+    try:
+        endpoint = f"{config.ENDPOINTS['cam_toolpath']}/{toolpath_id}"
+        response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
+        return response.json()
+    except requests.ConnectionError:
+        return {
+            "error": True,
+            "message": "Cannot connect to Fusion 360. Ensure the add-in is running.",
+            "code": "CONNECTION_ERROR"
+        }
+    except requests.Timeout:
+        return {
+            "error": True,
+            "message": "Request to Fusion 360 timed out. The add-in may be busy.",
+            "code": "TIMEOUT_ERROR"
+        }
+    except Exception as e:
+        logging.error("Get toolpath details failed: %s", e)
+        return {
+            "error": True,
+            "message": f"Failed to get toolpath details: {str(e)}",
+            "code": "UNKNOWN_ERROR"
+        }
+
+
+@mcp.tool()
+def modify_toolpath_parameter(toolpath_id: str, parameter_name: str, value: str):
+    """
+    You can modify a parameter value for a specific CAM toolpath operation.
+    
+    Use this to update feeds, speeds, geometry settings, or other editable parameters.
+    Always check get_toolpath_details first to see which parameters are editable!
+    
+    CRITICAL: 
+    - The parameter must be marked as editable (editable: true in get_toolpath_details)
+    - The value must be within the min/max constraints if they exist
+    - Read-only parameters will return a READ_ONLY error
+    
+    Common parameter names you can modify:
+    - spindle_speed: Spindle RPM (e.g., "12000")
+    - cutting_feedrate: Feed rate in mm/min (e.g., "1500")
+    - plunge_feedrate: Plunge feed rate (e.g., "500")
+    - stepover: Stepover percentage or distance (e.g., "40" for 40%)
+    - stepdown: Axial depth of cut (e.g., "2.0")
+    
+    Example:
+    {
+        "toolpath_id": "op_001",
+        "parameter_name": "spindle_speed",
+        "value": "12000"
+    }
+    
+    Possible errors:
+    - TOOLPATH_NOT_FOUND: The toolpath_id doesn't exist
+    - INVALID_VALUE: Value is wrong type or outside valid range
+    - READ_ONLY: Parameter cannot be modified
+    - PARAMETER_NOT_FOUND: The parameter_name doesn't exist for this operation
+    
+    Typical use cases: Optimizing feeds and speeds, adjusting stepover/stepdown for better surface finish.
+    """
+    try:
+        endpoint = f"{config.ENDPOINTS['cam_toolpath_parameter']}/{toolpath_id}/parameter"
+        payload = {
+            "parameter_name": parameter_name,
+            "value": value
+        }
+        headers = config.HEADERS
+        response = requests.post(endpoint, json=payload, headers=headers, timeout=config.REQUEST_TIMEOUT)
+        return response.json()
+    except requests.ConnectionError:
+        return {
+            "error": True,
+            "message": "Cannot connect to Fusion 360. Ensure the add-in is running.",
+            "code": "CONNECTION_ERROR"
+        }
+    except requests.Timeout:
+        return {
+            "error": True,
+            "message": "Request to Fusion 360 timed out. The add-in may be busy.",
+            "code": "TIMEOUT_ERROR"
+        }
+    except Exception as e:
+        logging.error("Modify toolpath parameter failed: %s", e)
+        return {
+            "error": True,
+            "message": f"Failed to modify parameter: {str(e)}",
+            "code": "UNKNOWN_ERROR"
+        }
+
+
+@mcp.tool()
+def get_tool_info(tool_id: str):
+    """
+    You can get detailed information about a specific cutting tool from the tool library.
+    
+    Use this to query tool geometry and specifications for making informed suggestions
+    about feeds and speeds. You get the tool_id from get_toolpath_details (in the tool section).
+    
+    Returns complete tool data including:
+    - Geometry: diameter, overall_length, flute_length, shaft_diameter, corner_radius
+    - Specifications: flute_count, material (e.g., "carbide", "HSS"), coating (e.g., "TiAlN")
+    - Tool number in the library
+    
+    IMPORTANT: Tool dimensions are in the document's unit system (typically mm).
+    Remember: In Fusion 360, 1 unit = 1 cm = 10 mm, so a 6mm tool shows as 0.6.
+    
+    Example:
+    {
+        "tool_id": "tool_001"
+    }
+    
+    Example response:
+    {
+        "id": "tool_001",
+        "name": "6mm Flat Endmill",
+        "type": "flat end mill",
+        "geometry": {
+            "diameter": 0.6,
+            "diameter_unit": "mm",
+            "overall_length": 5.0,
+            "flute_length": 2.0
+        },
+        "specifications": {
+            "flute_count": 4,
+            "material": "carbide",
+            "coating": "TiAlN"
+        },
+        "tool_number": 1
+    }
+    
+    Typical use cases: Calculating appropriate feeds/speeds based on tool geometry,
+    verifying tool specifications before suggesting machining parameters.
+    """
+    try:
+        endpoint = f"{config.ENDPOINTS['cam_tool']}/{tool_id}"
+        response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
+        return response.json()
+    except requests.ConnectionError:
+        return {
+            "error": True,
+            "message": "Cannot connect to Fusion 360. Ensure the add-in is running.",
+            "code": "CONNECTION_ERROR"
+        }
+    except requests.Timeout:
+        return {
+            "error": True,
+            "message": "Request to Fusion 360 timed out. The add-in may be busy.",
+            "code": "TIMEOUT_ERROR"
+        }
+    except Exception as e:
+        logging.error("Get tool info failed: %s", e)
+        return {
+            "error": True,
+            "message": f"Failed to get tool info: {str(e)}",
+            "code": "UNKNOWN_ERROR"
+        }
+
+
+# ============================================================================
+# Prompts
+# ============================================================================
 
 @mcp.prompt()
 def weingals():

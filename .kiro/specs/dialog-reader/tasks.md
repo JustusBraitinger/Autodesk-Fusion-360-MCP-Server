@@ -1,0 +1,113 @@
+# Implementation Plan
+
+- [x] 1. Create CAM module with core functions
+  - [x] 1.1 Create `MCP/cam.py` with CAM product access function
+    - Implement `get_cam_product()` to safely access CAM API
+    - Handle case when no CAM data exists in document
+    - _Requirements: 1.3_
+  - [x] 1.2 Implement toolpath listing function
+    - Implement `list_all_toolpaths()` to enumerate all setups and operations
+    - Return structured data with id, name, type, tool_name for each toolpath
+    - Organize toolpaths by parent setup
+    - _Requirements: 1.1, 1.2, 1.4_
+  - [ ]* 1.3 Write property test for toolpath list completeness
+    - **Property 1: Toolpath list completeness**
+    - **Validates: Requirements 1.1, 1.2, 1.4**
+  - [x] 1.4 Implement toolpath parameter extraction
+    - Implement `get_toolpath_parameters()` to extract all parameters from an operation
+    - Include feeds/speeds, geometry settings, heights, and tool reference
+    - Include parameter metadata (type, unit, constraints, editable flag)
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2, 3.3, 3.4_
+  - [x] 1.4.1 Add tool settings extraction to toolpath parameters
+    - Implement `_extract_tool_settings()` helper function in `MCP/cam.py`
+    - Extract preset spindle speed, surface speed, feed per tooth from tool
+    - Extract ramp spindle speed, plunge spindle speed, feed per revolution
+    - Add tool_settings section to `get_toolpath_parameters()` response
+    - _Requirements: 2.7_
+  - [ ]* 1.5 Write property test for toolpath parameter completeness
+    - **Property 2: Toolpath parameter completeness**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
+  - [ ]* 1.6 Write property test for parameter metadata completeness
+    - **Property 4: Parameter metadata completeness**
+    - **Validates: Requirements 3.1, 3.2, 3.3, 3.4**
+  - [x] 1.7 Implement tool information extraction
+    - Implement `get_tool_info()` to extract tool geometry and specifications
+    - Include diameter, length, flute count, material, coating
+    - _Requirements: 6.1, 6.2, 6.3, 6.4_
+  - [ ]* 1.8 Write property test for tool information completeness
+    - **Property 7: Tool information completeness**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.4**
+  - [x] 1.9 Implement parameter modification function
+    - Implement `set_toolpath_parameter()` to modify operation parameters
+    - Validate parameter type and range before modification
+    - Return error for read-only or invalid parameters
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ]* 1.10 Write property test for valid parameter modification
+    - **Property 5: Valid parameter modification**
+    - **Validates: Requirements 4.1**
+  - [ ]* 1.11 Write property test for invalid parameter rejection
+    - **Property 6: Invalid parameter rejection**
+    - **Validates: Requirements 4.2**
+
+- [x] 2. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 3. Add HTTP endpoints to Fusion Add-In
+  - [x] 3.1 Add GET `/cam/toolpaths` endpoint
+    - Add handler in `MCP/MCP.py` for listing toolpaths
+    - Return JSON response with setups and toolpaths
+    - Handle empty CAM case with descriptive message
+    - _Requirements: 1.1, 1.2, 1.3, 1.4_
+  - [x] 3.2 Add GET `/cam/toolpath/<id>` endpoint
+    - Add handler for getting specific toolpath parameters
+    - Parse toolpath ID from URL path
+    - Return 404 error for non-existent toolpath
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
+  - [ ]* 3.3 Write property test for JSON serialization round-trip
+    - **Property 3: JSON serialization round-trip**
+    - **Validates: Requirements 2.6**
+  - [x] 3.4 Add POST `/cam/toolpath/<id>/parameter` endpoint
+    - Add handler for modifying toolpath parameters
+    - Parse parameter name and value from request body
+    - Return appropriate error responses for invalid requests
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [x] 3.5 Add GET `/cam/tools` and `/cam/tool/<id>` endpoints
+    - Add handlers for listing and getting tool information
+    - Return tool geometry and specifications
+    - _Requirements: 6.1, 6.2, 6.3_
+
+- [ ] 4. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 5. Update configuration
+  - [x] 5.1 Add CAM endpoints to Server/config.py
+    - Add cam_toolpaths, cam_toolpath, cam_toolpath_parameter, cam_tools, cam_tool endpoints
+    - _Requirements: 5.4_
+
+- [x] 6. Add MCP Server tools
+  - [x] 6.1 Implement `list_cam_toolpaths` MCP tool
+    - Add tool decorator and function in `Server/MCP_Server.py`
+    - Call HTTP endpoint and return structured response
+    - Handle connection errors gracefully
+    - _Requirements: 5.1, 5.5_
+  - [x] 6.2 Implement `get_toolpath_details` MCP tool
+    - Add tool for inspecting specific toolpath parameters
+    - Include comprehensive docstring for LLM usage
+    - _Requirements: 5.2_
+  - [x] 6.2.1 Update `get_toolpath_details` docstring to include tool settings
+    - Update docstring to document tool_settings section in response
+    - Include examples of tool settings parameters (preset spindle speed, surface speed, feed per tooth)
+    - _Requirements: 2.7_
+  - [x] 6.3 Implement `modify_toolpath_parameter` MCP tool
+    - Add tool for modifying toolpath parameters
+    - Include parameter validation in docstring
+    - _Requirements: 5.3_
+  - [x] 6.4 Implement `get_tool_info` MCP tool
+    - Add tool for querying tool library information
+    - _Requirements: 6.1_
+  - [ ]* 6.5 Write unit tests for MCP tool registration
+    - Verify all CAM tools are registered on server start
+    - _Requirements: 5.1, 5.2, 5.3_
+
+- [x] 7. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

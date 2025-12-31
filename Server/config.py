@@ -1,7 +1,7 @@
 # Fusion 360 API Configuration
 
 # Base URL für den Fusion 360 Server
-BASE_URL = "http://localhost:5000"
+BASE_URL = "http://localhost:5001"
 
 # API Endpoints
 ENDPOINTS = {
@@ -40,7 +40,12 @@ ENDPOINTS = {
     "rectangular_pattern": f"{BASE_URL}/rectangular_pattern",
     "draw_text": f"{BASE_URL}/draw_text",
     "move_body": f"{BASE_URL}/move_body",
-    
+    # CAM endpoints
+    "cam_toolpaths": f"{BASE_URL}/cam/toolpaths",
+    "cam_toolpath": f"{BASE_URL}/cam/toolpath",
+    "cam_toolpath_parameter": f"{BASE_URL}/cam/toolpath",
+    "cam_tools": f"{BASE_URL}/cam/tools",
+    "cam_tool": f"{BASE_URL}/cam/tool",
 }
 
 # Request Headers

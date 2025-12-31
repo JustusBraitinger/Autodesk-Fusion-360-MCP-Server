@@ -1,4 +1,4 @@
-import adsk.core, adsk.fusion, traceback
+import adsk.core, adsk.fusion, adsk.cam, traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from http import HTTPStatus
 import threading
@@ -8,6 +8,10 @@ import queue
 from pathlib import Path
 import math
 import os
+import re
+
+# Import CAM module
+from . import cam
 
 ModelParameterSnapshot = []
 httpd = None
@@ -1299,6 +1303,57 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type','application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
+            
+            # CAM Endpoints
+            elif self.path == '/cam/toolpaths':
+                # GET /cam/toolpaths - List all toolpaths in document
+                # Requirements: 1.1, 1.2, 1.3, 1.4
+                cam_product = cam.get_cam_product()
+                result = cam.list_all_toolpaths(cam_product)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            elif self.path.startswith('/cam/toolpath/') and '/parameter' not in self.path:
+                # GET /cam/toolpath/<id> - Get parameters for specific toolpath
+                # Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
+                toolpath_id = self.path[len('/cam/toolpath/'):]
+                cam_product = cam.get_cam_product()
+                result = cam.get_toolpath_parameters(cam_product, toolpath_id)
+                
+                if result.get('error') and result.get('code') == 'TOOLPATH_NOT_FOUND':
+                    self.send_response(404)
+                else:
+                    self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            elif self.path == '/cam/tools':
+                # GET /cam/tools - List all tools used in document
+                # Requirements: 6.1
+                cam_product = cam.get_cam_product()
+                result = cam.list_all_tools(cam_product)
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            elif self.path.startswith('/cam/tool/'):
+                # GET /cam/tool/<id> - Get specific tool information
+                # Requirements: 6.1, 6.2, 6.3
+                tool_id = self.path[len('/cam/tool/'):]
+                cam_product = cam.get_cam_product()
+                result = cam.get_tool_info(cam_product, tool_id)
+                
+                if result.get('error') and result.get('code') == 'TOOL_NOT_FOUND':
+                    self.send_response(404)
+                else:
+                    self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
            
             else:
                 self.send_error(404,'Not Found')
@@ -1622,6 +1677,55 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Verbindung erfolgreich"}).encode('utf-8'))
             
+            # CAM Parameter Modification Endpoint
+            # POST /cam/toolpath/<id>/parameter - Modify a toolpath parameter
+            # Requirements: 4.1, 4.2, 4.3, 4.4
+            elif path.startswith('/cam/toolpath/') and path.endswith('/parameter'):
+                # Extract toolpath ID from path: /cam/toolpath/<id>/parameter
+                match = re.match(r'/cam/toolpath/(.+)/parameter', path)
+                if match:
+                    toolpath_id = match.group(1)
+                    param_name = data.get('name')
+                    param_value = data.get('value')
+                    
+                    if not param_name:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Parameter 'name' is required",
+                            "code": "MISSING_PARAMETER"
+                        }).encode('utf-8'))
+                    elif param_value is None:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Parameter 'value' is required",
+                            "code": "MISSING_PARAMETER"
+                        }).encode('utf-8'))
+                    else:
+                        cam_product = cam.get_cam_product()
+                        result = cam.set_toolpath_parameter(cam_product, toolpath_id, param_name, param_value)
+                        
+                        if result.get('error'):
+                            if result.get('code') == 'TOOLPATH_NOT_FOUND':
+                                self.send_response(404)
+                            elif result.get('code') in ['INVALID_VALUE', 'READ_ONLY', 'PARAMETER_NOT_FOUND']:
+                                self.send_response(400)
+                            else:
+                                self.send_response(500)
+                        else:
+                            self.send_response(200)
+                        
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                else:
+                    self.send_error(400, 'Invalid path format')
+            
             elif path == '/draw_2d_rectangle':
                 x_1 = float(data.get('x_1',0))
                 y_1 = float(data.get('y_1',0))
@@ -1687,7 +1791,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def run_server():
     global httpd
-    server_address = ('localhost',5000)
+    server_address = ('localhost',5001)
     httpd = HTTPServer(server_address, Handler)
     httpd.serve_forever()
 
@@ -1719,7 +1823,7 @@ def run(context):
         taskThread.daemon = True
         taskThread.start()
 
-        ui.messageBox(f"Fusion HTTP Add-In gestartet! Port 5000.\nParameter geladen: {len(ModelParameterSnapshot)} Modellparameter")
+        ui.messageBox(f"Fusion HTTP Add-In gestartet! Port 5001.\nParameter geladen: {len(ModelParameterSnapshot)} Modellparameter")
 
         # HTTP-Server starten
         threading.Thread(target=run_server, daemon=True).start()
