@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Sync Version on Spec Complete",
+  "description": "When a spec is successfully implemented, updates the version in pyproject.toml following semantic versioning and syncs the version in FusionMCPBridge.manifest to match.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "./**/*.py"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A spec implementation has just been completed. Please:\n\n1. Check if a spec was successfully implemented in this session\n2. If yes, determine the appropriate semantic version bump (patch for fixes, minor for features, major for breaking changes)\n3. Update the version in pyproject.toml following semantic versioning\n4. Update the version in /Users/bsport/projects/fustion360-mcp/Autodesk-Fusion-360-MCP-Server/FusionMCPBridge/FusionMCPBridge.manifest to match the new version\n5. Ensure both files have the same version number\n\nOnly proceed with version updates if a spec was actually implemented successfully."
+  }
+}

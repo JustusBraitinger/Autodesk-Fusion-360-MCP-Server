@@ -1,3 +1,9 @@
+"""MCP Server for Fusion 360 integration.
+
+This module defines the FastMCP server with all tools for controlling Fusion 360.
+The mcp instance can be imported and run programmatically or via CLI.
+"""
+
 import os
 import urllib3
 
@@ -11,8 +17,10 @@ import json
 import logging
 import requests
 from mcp.server.fastmcp import FastMCP
-import config
-import interceptor
+
+# Import from package modules
+from fusion_mcp import config
+from fusion_mcp import interceptor
 
 
 
@@ -1112,66 +1120,7 @@ def modify_toolpath_parameter(toolpath_id: str, parameter_name: str, value: str)
             "code": "UNKNOWN_ERROR"
         }
 
-@mcp.tool()
-def list_cam_tools():
-    """
-    You can list all cutting tools available in the CAM tool libraries.
-    
-    This shows all tools from all tool libraries in the current Fusion 360 document.
-    Use this to discover available tools before getting detailed information with get_tool_info().
-    
-    Each tool includes: id, name, type, tool number, and basic geometry (diameter, length).
-    Tools are organized by their parent library.
-    
-    IMPORTANT: If no tools are found, the document may not have any tool libraries loaded.
-    
-    Example response:
-    {
-        "libraries": [
-            {
-                "name": "My Tool Library",
-                "id": "lib_001", 
-                "tools": [
-                    {
-                        "id": "tool_001",
-                        "name": "6mm Flat Endmill",
-                        "type": "flat end mill",
-                        "number": 1,
-                        "diameter": 6.0,
-                        "overall_length": 50.0
-                    }
-                ]
-            }
-        ],
-        "total_count": 1,
-        "message": null
-    }
-    
-    Typical use cases: Discovering available tools, finding tool IDs for detailed inspection.
-    """
-    try:
-        endpoint = config.ENDPOINTS["cam_tools"]
-        response = requests.get(endpoint, timeout=config.REQUEST_TIMEOUT)
-        return interceptor.intercept_response(endpoint, response, "GET")
-    except requests.ConnectionError:
-        return {
-            "error": True,
-            "message": "Cannot connect to Fusion 360. Ensure the add-in is running.",
-            "code": "CONNECTION_ERROR"
-        }
-    except requests.Timeout:
-        return {
-            "error": True,
-            "message": "Request to Fusion 360 timed out. The add-in may be busy.",
-            "code": "TIMEOUT_ERROR"
-        }
-    except Exception as e:
-        logging.error("List CAM tools failed: %s", e)
-        return {
-            "error": True,
-            "message": f"Failed to list tools: {str(e)}",
-            "code": "UNKNOWN_ERROR"
-        }
+
 @mcp.tool()
 def get_tool_info(tool_id: str):
     """

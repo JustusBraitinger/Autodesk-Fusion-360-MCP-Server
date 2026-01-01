@@ -1,0 +1,96 @@
+# Implementation Plan
+
+- [x] 1. Create pyproject.toml and project structure
+  - [x] 1.1 Create pyproject.toml with project metadata, dependencies, and entry points
+    - Define project name as "fusion-mcp", version "0.1.0"
+    - Add dependencies: fastmcp>=2.12.0, uvicorn>=0.35.0, requests>=2.32.0
+    - Configure hatchling build backend
+    - Define CLI entry points: install-fusion-plugin, start-mcp-server
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [ ]* 1.2 Write property test for pyproject.toml schema validation
+    - **Property 1: pyproject.toml Schema Validation**
+    - **Validates: Requirements 2.1, 2.2, 2.3, 2.4**
+  - [x] 1.3 Create src/fusion_mcp/ package directory structure
+    - Create src/fusion_mcp/__init__.py
+    - _Requirements: 7.1, 7.3_
+
+- [x] 2. Implement CLI module with path resolution
+  - [x] 2.1 Create src/fusion_mcp/cli.py with path resolution function
+    - Implement get_fusion_addins_path() for macOS and Windows
+    - Handle unsupported platforms with clear error message
+    - _Requirements: 3.2, 3.3_
+  - [ ]* 2.2 Write property test for platform-specific path resolution
+    - **Property 2: Platform-Specific Path Resolution**
+    - **Validates: Requirements 3.2, 3.3**
+  - [x] 2.3 Implement install_plugin() function for copy installation
+    - Parse --dev argument using argparse
+    - Copy FusionMCPBridge to Fusion add-ins directory
+    - Create parent directories if they don't exist
+    - Print success message with installation path
+    - _Requirements: 3.1, 3.4, 3.5_
+  - [ ]* 2.4 Write property test for copy installation with directory creation
+    - **Property 3: Copy Installation with Directory Creation**
+    - **Validates: Requirements 3.1, 3.5**
+  - [x] 2.5 Implement symlink installation mode (--dev flag)
+    - Create symbolic link instead of copying when --dev is passed
+    - Remove existing symlink if present
+    - Warn and exit if regular directory exists at target
+    - Print development mode message on success
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ]* 2.6 Write property tests for symlink installation
+    - **Property 4: Symlink Installation Creates Symlink**
+    - **Property 5: Symlink Installation Replaces Existing Symlink**
+    - **Property 6: Symlink Installation Warns on Existing Directory**
+    - **Validates: Requirements 4.1, 4.2, 4.3**
+
+- [ ] 3. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Migrate MCP server code to package structure
+  - [x] 4.1 Copy Server/MCP_Server.py to src/fusion_mcp/server.py
+    - Update imports to work as module
+    - Ensure mcp instance is importable
+    - Keep original Server/MCP_Server.py for backward compatibility
+    - _Requirements: 7.1, 7.4_
+  - [x] 4.2 Copy Server/config.py to src/fusion_mcp/config.py
+    - Keep configuration unchanged
+    - Keep original Server/config.py for backward compatibility
+    - _Requirements: 7.1_
+  - [x] 4.3 Copy Server/interceptor.py to src/fusion_mcp/interceptor.py
+    - Update imports if necessary
+    - Keep original Server/interceptor.py for backward compatibility
+    - _Requirements: 7.1_
+  - [x] 4.4 Implement start_server() function in cli.py
+    - Import and run the FastMCP server
+    - Configure SSE transport on port 8000
+    - _Requirements: 5.1, 5.2_
+
+- [x] 5. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [-] 6. Update documentation
+  - [x] 6.1 Update README.md with new workflow
+    - Document uv sync for setup
+    - Document uv run install-fusion-plugin with --dev option
+    - Document uv run fastmcp install command
+    - Document uv run start-mcp-server command
+    - Remove references to old Install_Addin.py scripts
+    - Remove pip-based installation instructions
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  - [ ]* 6.2 Write property test for README documentation completeness
+    - **Property 7: README Documentation Completeness**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+
+- [x] 7. Keep backward compatibility
+  - [x] 7.1 Keep Server/ directory for backward compatibility
+    - Keep Server/MCP_Server.py, Server/config.py, Server/interceptor.py
+    - Keep Server/requirements.txt for reference
+    - _Requirements: 7.1_
+  - [x] 7.2 Keep installation scripts for backward compatibility
+    - Keep Install_Addin.py
+    - Keep Install_Addin_Fixed.py
+    - Keep Install_Addin_Symlink.py
+    - _Requirements: 8.5_
+
+- [x] 8. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

@@ -23,7 +23,7 @@ Fusion MCP Integration bridges AI assistants with Autodesk Fusion 360 through th
 
 # Setup
 
-**I highly recommend to do everything inside Visual Studio Code or an other IDE**
+**I highly recommend to do everything inside Visual Studio Code or another IDE**
 
 ---
 
@@ -31,6 +31,7 @@ Fusion MCP Integration bridges AI assistants with Autodesk Fusion 360 through th
 | Requirement | Link |
 |------------|------|
 | Python 3.10+ | https://python.org |
+| uv (Python package manager) | https://docs.astral.sh/uv/getting-started/installation/ |
 | Autodesk Fusion 360 | https://autodesk.com/fusion360 |
 | Claude Desktop | https://claude.ai/download |
 | VS Code | https://code.visualstudio.com |
@@ -40,70 +41,54 @@ Fusion MCP Integration bridges AI assistants with Autodesk Fusion 360 through th
 ## Clone Repository
 ```bash
 git clone https://github.com/JustusBraitinger/FusionMCP
+cd FusionMCP
 ```
-
 
 > **Important:** Do **NOT** start the Add-In yet.
 
+---
 
+## Install Dependencies
 
-## Install Python Dependencies
+Use `uv sync` to install all dependencies and set up the virtual environment automatically:
+
 ```bash
-cd Server
-python -m venv venv
+uv sync
 ```
 
-### Activate venv
+This will:
+- Create a virtual environment if one doesn't exist
+- Install all required dependencies (fastmcp, uvicorn, requests)
+- Lock versions in `uv.lock` for reproducible builds
 
-**Windows PowerShell**
-```powershell
-.\venv\Scripts\Activate
-```
+---
 
-### Install packages
-```bash
-pip install -r requirements.txt
-pip install "mcp[cli]"
-```
 ## Installing the MCP Add-In for Fusion 360
 
 ### For Development (Recommended)
 Creates a symbolic link for live editing without reinstalling:
 ```bash
-cd ..
-python3 Install_Addin_Symlink.py
+uv run install-fusion-plugin --dev
 ```
 
 ### For Distribution
 Copies files to the add-in directory:
 ```bash
-cd ..
-python3 Install_Addin_Fixed.py
+uv run install-fusion-plugin
 ```
 
-> **Development Tip:** Use the symlink installer during development. Any code changes will be immediately available in Fusion after restarting the add-in.
+> **Development Tip:** Use the `--dev` flag during development. Any code changes will be immediately available in Fusion after restarting the add-in.
+
 ---
 
-## Connect to Claude
-The most simple way to add the MCP-Server to Claude Desktop is to run following command:  
-```bash
-cd Server
-uv run mcp install MCP_Server.py
-```
-The output should be like this:    
+## Connect to Claude Desktop
 
-```bash
-[11/13/25 08:42:37] INFO     Added server 'Fusion' to Claude config
-                    INFO     Successfully installed Fusion in Claude app                                                                                                                                                               
-```
-
-# Alternative
-
-### Modify Claude Config
-In Claude Desktop go to:  
+In Claude Desktop go to:
 **Settings → Developer → Edit Config**
 
 Add this block (change the path for your system):
+
+**macOS:**
 ```json
 {
   "mcpServers": {
@@ -111,9 +96,26 @@ Add this block (change the path for your system):
       "command": "uv",
       "args": [
         "--directory",
-        "C:\\Path\\to\\FusionMCP\\Server",
+        "/Users/yourname/path/to/FusionMCP",
         "run",
-        "MCP_Server.py"
+        "start-mcp-server"
+      ]
+    }
+  }
+}
+```
+
+**Windows:**
+```json
+{
+  "mcpServers": {
+    "FusionMCP": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "C:\\Users\\yourname\\path\\to\\FusionMCP",
+        "run",
+        "start-mcp-server"
       ]
     }
   }
@@ -121,6 +123,15 @@ Add this block (change the path for your system):
 ```
 > **Note:** Windows paths require double backslashes `\\`
 
+Claude will automatically start and stop the MCP server when needed.
+
+### Alternative: Using fastmcp install
+
+You can also use the fastmcp CLI to auto-configure Claude:
+
+```bash
+uv run fastmcp install src/fusion_mcp/server.py --name Fusion
+```
 
 ### Using the MCP in Claude
 1. Restart Claude if needed (force close if not visible)
@@ -132,10 +143,16 @@ Add this block (change the path for your system):
 
 ## Use MCP in VS Code (Copilot)
 
-Create or edit the file:
+VS Code uses HTTP transport, so you need to start the server manually with the `--sse` flag:
+
+```bash
+uv run start-mcp-server --sse
 ```
-%APPDATA%\Code\User\globalStorage\github.copilot-chat\mcp.json
-```
+
+Then create or edit the file:
+
+**Windows:** `%APPDATA%\Code\User\globalStorage\github.copilot-chat\mcp.json`
+**macOS:** `~/Library/Application Support/Code/User/globalStorage/github.copilot-chat/mcp.json`
 
 Paste:
 ```json
@@ -151,31 +168,27 @@ Paste:
 ```
 
 ### Alternative Setup in VS Code
-1. Press **CTRL + SHIFT + P** → search **MCP** → choose:
-2. **Add MCP**
-3. **HTTP**
-4. Enter:
-5. Name your MCP **`FusionMCP`**!!
-```
-http://127.0.0.1:8000/sse
-```
+1. Press **CTRL + SHIFT + P** (or **CMD + SHIFT + P** on macOS)
+2. Search **MCP** → choose **Add MCP**
+3. Select **HTTP**
+4. Enter: `http://127.0.0.1:8000/sse`
+5. Name your MCP **`FusionMCP`**
 
 ---
 
 ## Try It Out 😄
-Activate the Fusion Addin inside Fusion
-### Configured in VS-Code:
-Start the server:
-```bash
-python MCP_Server.py
-```
-Then type   
-```
-/mcp.FusionMCP
-```
-Now you will see a list of predetermined Prompts.   
-### Configured in Claude   
-Just open Claude, an ask for the FusionMCP
+
+1. Activate the Fusion Add-In inside Fusion 360
+2. Start the MCP server (if using VS Code):
+   ```bash
+   uv run start-mcp-server
+   ```
+
+### In VS Code
+Type `/mcp.FusionMCP` to see a list of predetermined prompts.
+
+### In Claude
+Just open Claude and ask for the FusionMCP tools.
 
 ---
 
@@ -188,7 +201,7 @@ Just open Claude, an ask for the FusionMCP
 | Tool | Description |
 | :--- | :--- |
 | **Draw 2D circle** | Draws a 2D **circle** at a specified position and plane. |
-| **Ellipsie** | Generates an **ellipse** (elliptical curve) in the sketching plane. |
+| **Ellipse** | Generates an **ellipse** (elliptical curve) in the sketching plane. |
 | **Draw lines** | Creates a **polyline** (multiple connected lines) as a sketch. |
 | **Draw one line** | Draws a single line between two 3D points. |
 | **3-Point Arc** | Draws a **circular arc** based on three defined points. |
@@ -242,12 +255,12 @@ Just open Claude, an ask for the FusionMCP
 
 ## Architecture
 
-### Server.py
+### Server Module (src/fusion_mcp/server.py)
 - Defines MCP server, tools, and prompts
 - Handles HTTP calls to Fusion add-in
 
-### MCP.py
-- Fusion Add-in
+### Fusion Add-In (FusionMCPBridge/)
+- Runs inside Fusion 360
 - Because the Fusion API is not thread-safe, this uses:
   - Custom event handler
   - Task queue

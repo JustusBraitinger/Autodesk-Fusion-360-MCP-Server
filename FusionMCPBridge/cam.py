@@ -750,7 +750,7 @@ def get_toolpath_parameters(cam: adsk.cam.CAM, toolpath_id: str) -> dict:
 
 def _find_tool_by_id(cam: adsk.cam.CAM, tool_id: str) -> Optional[adsk.cam.Tool]:
     """
-    Find a tool by its ID across all setups and operations.
+    Find a tool by its ID, first checking the tool library, then operations.
     
     Args:
         cam: The CAM product instance
@@ -763,6 +763,22 @@ def _find_tool_by_id(cam: adsk.cam.CAM, tool_id: str) -> Optional[adsk.cam.Tool]
         return None
     
     try:
+        # First, try to find in the tool library
+        if hasattr(cam, 'toolLibraries'):
+            tool_libraries = cam.toolLibraries
+            if tool_libraries:
+                for lib_idx in range(tool_libraries.count):
+                    library = tool_libraries.item(lib_idx)
+                    if hasattr(library, 'tools'):
+                        tools = library.tools
+                        if tools:
+                            for tool_idx in range(tools.count):
+                                tool = tools.item(tool_idx)
+                                current_id = tool.entityToken if hasattr(tool, 'entityToken') else str(id(tool))
+                                if current_id == tool_id:
+                                    return tool
+        
+        # Fallback: search through operations (existing logic)
         setups = cam.setups
         if not setups:
             return None
@@ -804,7 +820,120 @@ def _find_tool_by_id(cam: adsk.cam.CAM, tool_id: str) -> Optional[adsk.cam.Tool]
         return None
 
 
-def get_tool_info(cam: adsk.cam.CAM, tool_id: str) -> dict:
+def list_all_tools(cam: adsk.cam.CAM) -> dict:
+    """
+    List all tools available in the CAM tool libraries.
+    
+    Args:
+        cam: The CAM product instance
+        
+    Returns:
+        dict: A dictionary containing:
+            - libraries: List of tool library dictionaries with tools
+            - total_count: Total number of tools across all libraries
+            - message: Optional message if no tools found
+    """
+    result = {
+        "libraries": [],
+        "total_count": 0,
+        "message": None
+    }
+    
+    if not cam:
+        result["message"] = "No CAM data present in the document"
+        return result
+    
+    try:
+        if not hasattr(cam, 'toolLibraries'):
+            result["message"] = "No tool libraries available"
+            return result
+            
+        tool_libraries = cam.toolLibraries
+        if not tool_libraries or tool_libraries.count == 0:
+            result["message"] = "No tool libraries found"
+            return result
+        
+        total_count = 0
+        
+        for lib_idx in range(tool_libraries.count):
+            library = tool_libraries.item(lib_idx)
+            
+            library_data = {
+                "name": library.name if hasattr(library, 'name') else f"Library {lib_idx}",
+                "id": library.entityToken if hasattr(library, 'entityToken') else f"lib_{lib_idx}",
+                "tools": []
+            }
+            
+            if hasattr(library, 'tools'):
+                tools = library.tools
+                if tools:
+                    for tool_idx in range(tools.count):
+                        tool = tools.item(tool_idx)
+                        
+                        tool_data = {
+                            "id": tool.entityToken if hasattr(tool, 'entityToken') else f"tool_{lib_idx}_{tool_idx}",
+                            "name": getattr(tool, 'description', None) or getattr(tool, 'name', f'Tool {tool_idx}'),
+                            "type": _get_tool_type_string(tool),
+                            "number": getattr(tool, 'number', None)
+                        }
+                        
+                        # Add basic geometry if available
+                        if hasattr(tool, 'parameters'):
+                            params = tool.parameters
+                            for param_idx in range(params.count):
+                                param = params.item(param_idx)
+                                param_name = param.name.lower()
+                                if "diameter" in param_name:
+                                    tool_data["diameter"] = getattr(param.value, 'value', param.value) if hasattr(param, 'value') else None
+                                elif "length" in param_name and "overall" in param_name:
+                                    tool_data["overall_length"] = getattr(param.value, 'value', param.value) if hasattr(param, 'value') else None
+                        
+                        library_data["tools"].append(tool_data)
+                        total_count += 1
+            
+            result["libraries"].append(library_data)
+        
+        result["total_count"] = total_count
+        
+        if total_count == 0:
+            result["message"] = "No tools found in any library"
+        
+        return result
+        
+    except Exception as e:
+        return {
+            "libraries": [],
+            "total_count": 0,
+            "message": f"Error accessing tool libraries: {str(e)}"
+        }
+
+
+def _get_tool_type_string(tool) -> str:
+    """Extract tool type as string from tool object."""
+    try:
+        if hasattr(tool, 'type'):
+            tool_type_enum = tool.type
+            # Map common tool types
+            type_map = {
+                0: "flat end mill",
+                1: "ball end mill", 
+                2: "bull nose end mill",
+                3: "chamfer mill",
+                4: "face mill",
+                5: "drill",
+                6: "center drill",
+                7: "countersink",
+                8: "counterbore",
+                9: "reamer",
+                10: "tap",
+                11: "thread mill",
+                12: "boring bar",
+                13: "probe"
+            }
+            return type_map.get(tool_type_enum, f"type_{tool_type_enum}")
+        return "unknown"
+    except Exception:
+        return "unknown"
     """
     Extract tool geometry and specifications from a tool.
     
@@ -842,38 +971,8 @@ def get_tool_info(cam: adsk.cam.CAM, tool_id: str) -> dict:
             }
         
         # Extract tool type
-        tool_type = "unknown"
-        if hasattr(tool, 'type'):
-            tool_type_enum = tool.type
-            # Map enum to string
-            type_map = {
-                0: "flat end mill",
-                1: "ball end mill",
-                2: "bull nose end mill",
-                3: "chamfer mill",
-                4: "face mill",
-                5: "slot mill",
-                6: "radius mill",
-                7: "dovetail mill",
-                8: "tapered mill",
-                9: "lollipop mill",
-                10: "drill",
-                11: "center drill",
-                12: "spot drill",
-                13: "tap",
-                14: "reamer",
-                15: "boring bar",
-                16: "counter bore",
-                17: "counter sink",
-                18: "thread mill",
-                19: "form mill",
-                20: "engrave",
-                21: "turning general",
-                22: "turning boring",
-                23: "turning threading",
-                24: "turning grooving",
-            }
-            tool_type = type_map.get(tool_type_enum, str(tool_type_enum))
+        tool_type = _get_tool_type_string(tool)
+
         
         # Extract geometry
         geometry = {

@@ -24,38 +24,46 @@
 
 ## Common Commands
 
-### Setup
+### Setup (Modern - Recommended)
 ```bash
-# Create virtual environment
-cd Server
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# or: .\venv\Scripts\Activate  # Windows PowerShell
-
-# Install dependencies
-pip install -r requirements.txt
-pip install "mcp[cli]"
+# Install all dependencies with uv
+uv sync
 ```
 
 ### Install Fusion Add-In
 ```bash
-python Install_Addin.py
-# or for fixed version:
-python Install_Addin_Fixed.py
+# For development (symlink - changes reflect immediately)
+uv run install-fusion-plugin --dev
+
+# For distribution (copy files)
+uv run install-fusion-plugin
 ```
 
 ### Run MCP Server
 ```bash
-cd Server
-python MCP_Server.py
-# or via uv:
-uv run MCP_Server.py
+uv run start-mcp-server
 ```
 
 ### Register with Claude
 ```bash
+uv run fastmcp install src/fusion_mcp/server.py --name Fusion
+```
+
+### Legacy Commands (still supported)
+```bash
+# Manual setup
 cd Server
-uv run mcp install MCP_Server.py
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
+pip install -r requirements.txt
+
+# Legacy installers
+python Install_Addin.py
+python Install_Addin_Symlink.py
+
+# Run server directly
+cd Server
+python MCP_Server.py
 ```
 
 ## Unit Conversion (Critical)

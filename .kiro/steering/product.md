@@ -21,7 +21,7 @@ Proof-of-concept / Educational project - not production software.
 
 ## Architecture
 Two-component system:
-1. **MCP Server** (`Server/`): FastMCP server exposing tools to AI assistants
-2. **Fusion Add-In** (`MCP/`): HTTP server running inside Fusion 360, executing CAD operations
+1. **MCP Server** (`src/fusion_mcp/`): FastMCP server exposing tools to AI assistants
+2. **Fusion Add-In** (`FusionMCPBridge/`): HTTP server running inside Fusion 360, executing CAD operations
 
 Communication flow: AI Assistant → MCP Server → HTTP → Fusion Add-In → Fusion 360 API
