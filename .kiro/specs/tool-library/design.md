@@ -60,19 +60,46 @@ New MCP tools to be added:
 |-----------|-------------|-------------|----------|
 | `list_tool_libraries` | List all accessible tool libraries | GET | `/tool-libraries` |
 | `list_library_tools` | List tools in a specific library | GET | `/tool-libraries/{library_id}/tools` |
-| `get_tool_details` | Get detailed tool information | GET | `/tools/{tool_id}` |
+| `get_tool_details` | Get detailed tool information (replaces `get_tool_info`) | GET | `/tools/{tool_id}` |
 | `create_tool` | Create a new tool in a library | POST | `/tool-libraries/{library_id}/tools` |
 | `modify_tool` | Update tool properties | PUT | `/tools/{tool_id}` |
 | `duplicate_tool` | Copy a tool to a library | POST | `/tools/{tool_id}/duplicate` |
 | `delete_tool` | Remove a tool from library | DELETE | `/tools/{tool_id}` |
 | `search_tools` | Search tools by criteria | POST | `/tools/search` |
 
+### Deprecation of Existing Tools
+
+The following existing tools will be deprecated and replaced:
+
+| Deprecated Tool | Replacement | Migration Notes |
+|-----------------|-------------|-----------------|
+| `get_tool_info(tool_id)` | `get_tool_details(tool_id)` | Same functionality, enhanced response with library context |
+
+The deprecated `get_tool_info` will:
+1. Log a deprecation warning when called
+2. Internally delegate to `get_tool_details` 
+3. Be removed in a future version
+
+### Consolidation of Tool Access in CAM Operations
+
+The existing CAM tools that access tool data will be updated to use the centralized tool library:
+
+| CAM Tool | Change |
+|----------|--------|
+| `get_toolpath_details` | Tool reference will use `tool_library.get_tool()` for consistent data |
+| `list_cam_toolpaths` | Tool info in response will use `tool_library._serialize_tool()` |
+
+This ensures:
+- Single source of truth for all tool data
+- Consistent tool serialization across all endpoints
+- Tools from libraries and operations return identical formats
+
 ### Fusion Add-In Module (FusionMCPBridge/tool_library.py)
 
-New module containing functions for tool library operations:
+New centralized module for all tool library operations:
 
 ```python
-# Core functions
+# Core functions - Public API
 def list_libraries() -> dict
 def list_tools(library_id: str) -> dict
 def get_tool(tool_id: str) -> dict
@@ -82,15 +109,50 @@ def duplicate_tool(tool_id: str, target_library_id: str, new_name: str) -> dict
 def delete_tool(tool_id: str) -> dict
 def search_tools(criteria: dict) -> dict
 
-# Helper functions
+# Shared helper functions - Used by cam.py
+def find_tool_by_id(tool_id: str) -> Optional[Tool]
+def serialize_tool(tool) -> dict  # Basic tool info for lists
+def serialize_tool_full(tool) -> dict  # Full details including cutting data
+
+# Internal helper functions
 def _find_library_by_id(library_id: str) -> Optional[ToolLibrary]
-def _find_tool_by_id(tool_id: str) -> Optional[Tool]
-def _serialize_library(library) -> dict
-def _serialize_tool(tool) -> dict
 def _deserialize_tool_data(data: dict) -> dict
 def _is_library_writable(library) -> bool
 def _is_tool_in_use(tool_id: str) -> bool
+def _get_tool_type_enum(type_string: str) -> ToolType
+def _create_tool_geometry(tool, geometry_data: dict) -> None
+def _create_tool_cutting_data(tool, cutting_data: dict) -> None
 ```
+
+### Refactoring Existing Code (FusionMCPBridge/cam.py)
+
+The existing tool-related code in `cam.py` will be refactored to use the centralized module:
+
+**Functions to remove from cam.py:**
+- `_find_tool_by_id()` - moved to `tool_library.py`
+- `_get_tool_data_from_operation()` - replaced by `tool_library.serialize_tool()`
+- `get_tool_info()` - replaced by `tool_library.get_tool()`
+
+**Functions to update in cam.py:**
+```python
+# Before
+from typing import Optional
+# ... local _find_tool_by_id implementation ...
+
+# After  
+from tool_library import find_tool_by_id, serialize_tool
+
+def _get_tool_data_from_operation(operation):
+    """Delegate to centralized tool serialization."""
+    tool = operation.tool if hasattr(operation, 'tool') else None
+    if tool:
+        return serialize_tool(tool)
+    return {"name": "No tool found", "id": None}
+```
+
+**HTTP endpoint changes in FusionMCPBridge.py:**
+- Remove `/cam/tool/{tool_id}` endpoint
+- Add new tool library endpoints routing to `tool_library.py` functions
 
 ### Configuration (src/fusion_mcp/config.py)
 
@@ -99,6 +161,8 @@ New endpoints to add:
 ```python
 ENDPOINTS = {
     # ... existing endpoints ...
+    
+    # Tool Library endpoints (new)
     "tool_libraries": f"{BASE_URL}/tool-libraries",
     "tool_library_tools": f"{BASE_URL}/tool-libraries",  # /{library_id}/tools
     "tool_details": f"{BASE_URL}/tools",  # /{tool_id}
@@ -109,6 +173,11 @@ ENDPOINTS = {
     "tool_search": f"{BASE_URL}/tools/search",
 }
 ```
+
+**Deprecated endpoints to remove:**
+- `cam_tool` - replaced by `tool_details`
+
+The MCP server will maintain the deprecated `get_tool_info` function temporarily, logging warnings and delegating to the new `get_tool_details`.
 
 ## Data Models
 

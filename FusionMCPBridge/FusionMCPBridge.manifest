@@ -5,7 +5,7 @@
 	"description":	{
 		"":	"MCP integration for AI-driven CAD - enables conversational 3D modeling with any MCP-compatible AI assistant"
 	},
-	"version":	"1.0.0",
+	"version":	"1.0.1",
 	"runOnStartup":	false,
 	"supportedOS":	"windows|mac",
 	"editEnabled":	true,

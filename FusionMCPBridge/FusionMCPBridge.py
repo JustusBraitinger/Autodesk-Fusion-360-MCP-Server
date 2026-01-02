@@ -12,6 +12,8 @@ import re
 
 # Import CAM module
 from . import cam
+# Import Tool Library module
+from . import tool_library
 
 ModelParameterSnapshot = []
 httpd = None
@@ -1305,6 +1307,43 @@ class Handler(BaseHTTPRequestHandler):
                 self.wfile.write(json.dumps({"ModelParameter": ModelParameterSnapshot}).encode('utf-8'))
             
             # CAM Endpoints
+            elif self.path == '/cam/toolpaths/heights':
+                # GET /cam/toolpaths/heights - List all toolpaths with height parameters
+                # Requirements: 1.1, 1.4, 2.1, 2.5
+                try:
+                    # Use enhanced validation that provides detailed error information
+                    result = cam.list_toolpaths_with_heights()
+                    
+                    if result.get('error'):
+                        # Map error codes to appropriate HTTP status codes
+                        error_code = result.get('code', 'UNKNOWN_ERROR')
+                        if error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                            status_code = 400  # Bad Request - client needs to fix their setup
+                        elif error_code == 'CAM_ACCESS_ERROR':
+                            status_code = 403  # Forbidden - access issue
+                        else:
+                            status_code = 500  # Internal Server Error
+                        
+                        self.send_response(status_code)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                        return
+                    
+                    self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(result).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "message": f"Unexpected error retrieving toolpaths with heights: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
             elif self.path == '/cam/toolpaths':
                 # GET /cam/toolpaths - List all toolpaths in document
                 # Requirements: 1.1, 1.2, 1.3, 1.4
@@ -1315,7 +1354,174 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode('utf-8'))
             
-            elif self.path.startswith('/cam/toolpath/') and '/parameter' not in self.path:
+            elif self.path.startswith('/cam/toolpath/') and self.path.endswith('/heights'):
+                # GET /cam/toolpath/{id}/heights - Get detailed height information for specific toolpath
+                # Requirements: 2.2, 3.1, 3.2, 3.3, 3.4, 2.5
+                try:
+                    # Extract toolpath ID from URL path: /cam/toolpath/{id}/heights
+                    path_parts = self.path.split('/')
+                    if len(path_parts) >= 4:
+                        toolpath_id = path_parts[3]  # /cam/toolpath/{id}/heights
+                        
+                        # Use enhanced validation and error handling
+                        result = cam.get_detailed_heights(toolpath_id=toolpath_id)
+                        
+                        if result.get('error'):
+                            # Map error codes to appropriate HTTP status codes
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'TOOLPATH_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code == 'MISSING_TOOLPATH_ID':
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps(result).encode('utf-8'))
+                            return
+                        
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/toolpath/{id}/heights",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "message": f"Unexpected error retrieving detailed heights: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
+            elif self.path.startswith('/cam/toolpath/') and self.path.endswith('/passes'):
+                # GET /cam/toolpath/{id}/passes - Get pass configuration for specific toolpath
+                # Requirements: 1.1, 1.2, 1.4, 1.5
+                try:
+                    # Extract toolpath ID from URL path: /cam/toolpath/{id}/passes
+                    path_parts = self.path.split('/')
+                    if len(path_parts) >= 4:
+                        toolpath_id = path_parts[3]  # /cam/toolpath/{id}/passes
+                        
+                        # Get CAM product and call the function
+                        cam_product = cam.get_cam_product()
+                        result = cam.get_toolpath_passes(cam_product, toolpath_id)
+                        
+                        if result.get('error'):
+                            # Map error codes to appropriate HTTP status codes
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'TOOLPATH_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code == 'MISSING_TOOLPATH_ID':
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps(result).encode('utf-8'))
+                            return
+                        
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/toolpath/{id}/passes",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "message": f"Unexpected error retrieving toolpath passes: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
+            elif self.path.startswith('/cam/toolpath/') and self.path.endswith('/linking'):
+                # GET /cam/toolpath/{id}/linking - Get linking parameters for specific toolpath
+                # Requirements: 7.1, 7.2, 7.3, 7.5
+                try:
+                    # Extract toolpath ID from URL path: /cam/toolpath/{id}/linking
+                    path_parts = self.path.split('/')
+                    if len(path_parts) >= 4:
+                        toolpath_id = path_parts[3]  # /cam/toolpath/{id}/linking
+                        
+                        # Get CAM product and call the function
+                        cam_product = cam.get_cam_product()
+                        result = cam.get_toolpath_linking(cam_product, toolpath_id)
+                        
+                        if result.get('error'):
+                            # Map error codes to appropriate HTTP status codes
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'TOOLPATH_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code == 'MISSING_TOOLPATH_ID':
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps(result).encode('utf-8'))
+                            return
+                        
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/toolpath/{id}/linking",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "message": f"Unexpected error retrieving toolpath linking: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
+            elif self.path.startswith('/cam/toolpath/') and '/parameter' not in self.path and not self.path.endswith('/heights'):
                 # GET /cam/toolpath/<id> - Get parameters for specific toolpath
                 # Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
                 toolpath_id = self.path[len('/cam/toolpath/'):]
@@ -1340,12 +1546,98 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode('utf-8'))
             
-            elif self.path.startswith('/cam/tool/'):
-                # GET /cam/tool/<id> - Get specific tool information
-                # Requirements: 6.1, 6.2, 6.3
-                tool_id = self.path[len('/cam/tool/'):]
-                cam_product = cam.get_cam_product()
-                result = cam.get_tool_info(cam_product, tool_id)
+            elif self.path.startswith('/cam/setup/') and self.path.endswith('/sequence'):
+                # GET /cam/setup/{id}/sequence - Analyze toolpath sequence in a setup
+                # Requirements: 2.1, 2.2, 2.4, 3.4
+                try:
+                    # Extract setup ID from URL path: /cam/setup/{id}/sequence
+                    path_parts = self.path.split('/')
+                    if len(path_parts) >= 4:
+                        setup_id = path_parts[3]  # /cam/setup/{id}/sequence
+                        
+                        # Get CAM product and call the function
+                        cam_product = cam.get_cam_product()
+                        result = cam.analyze_setup_sequence(cam_product, setup_id)
+                        
+                        if result.get('error'):
+                            # Map error codes to appropriate HTTP status codes
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'SETUP_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code == 'MISSING_SETUP_ID':
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps(result).encode('utf-8'))
+                            return
+                        
+                        self.send_response(200)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/setup/{id}/sequence",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "error": True,
+                        "message": f"Unexpected error retrieving setup sequence: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
+            # Tool Library Endpoints - GET
+            elif self.path == '/tool-libraries':
+                # GET /tool-libraries - List all accessible tool libraries
+                # Requirements: 1.1, 1.2, 1.3
+                print(f"DEBUG: tool-libraries endpoint hit, path={self.path}")
+                result = tool_library.list_libraries()
+                print(f"DEBUG: result={result}")
+                self.send_response(200)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            elif self.path.startswith('/tool-libraries/') and self.path.endswith('/tools'):
+                # GET /tool-libraries/{library_id}/tools - List tools in a specific library
+                # Requirements: 2.1, 2.2, 2.3, 2.4
+                # Extract library_id from path: /tool-libraries/{library_id}/tools
+                path_parts = self.path.split('/')
+                if len(path_parts) >= 4:
+                    library_id = path_parts[2]
+                    result = tool_library.list_tools(library_id)
+                    
+                    if result.get('error') and result.get('code') == 'LIBRARY_NOT_FOUND':
+                        self.send_response(404)
+                    else:
+                        self.send_response(200)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(result).encode('utf-8'))
+                else:
+                    self.send_error(400, 'Invalid path format')
+            
+            elif self.path.startswith('/tools/') and '/duplicate' not in self.path:
+                # GET /tools/{tool_id} - Get detailed tool information
+                # Requirements: 3.1, 3.2, 3.3, 3.4
+                tool_id = self.path[len('/tools/'):]
+                result = tool_library.get_tool(tool_id)
                 
                 if result.get('error') and result.get('code') == 'TOOL_NOT_FOUND':
                     self.send_response(404)
@@ -1354,6 +1646,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            # NOTE: /cam/tool/{tool_id} endpoint has been deprecated and removed.
+            # Use /tools/{tool_id} instead for tool details.
            
             else:
                 self.send_error(404,'Not Found')
@@ -1783,11 +2078,297 @@ class Handler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"message": "Body wird verschoben"}).encode('utf-8'))
             
+            # Tool Library Endpoints - POST, PUT, DELETE
+            # POST /tool-libraries/{library_id}/tools - Create a new tool
+            # Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6
+            elif path.startswith('/tool-libraries/') and path.endswith('/tools'):
+                # Extract library_id from path: /tool-libraries/{library_id}/tools
+                path_parts = path.split('/')
+                if len(path_parts) >= 4:
+                    library_id = path_parts[2]
+                    result = tool_library.create_tool(library_id, data)
+                    
+                    if result.get('error'):
+                        if result.get('code') == 'LIBRARY_NOT_FOUND':
+                            self.send_response(404)
+                        elif result.get('code') == 'LIBRARY_READ_ONLY':
+                            self.send_response(403)
+                        elif result.get('code') in ['MISSING_REQUIRED_FIELD', 'INVALID_TOOL_DATA']:
+                            self.send_response(400)
+                        else:
+                            self.send_response(500)
+                    else:
+                        self.send_response(201)  # Created
+                    
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps(result).encode('utf-8'))
+                else:
+                    self.send_error(400, 'Invalid path format')
+            
+            # POST /tools/{tool_id}/duplicate - Duplicate a tool
+            # Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+            elif path.startswith('/tools/') and path.endswith('/duplicate'):
+                # Extract tool_id from path: /tools/{tool_id}/duplicate
+                match = re.match(r'/tools/(.+)/duplicate', path)
+                if match:
+                    tool_id = match.group(1)
+                    target_library_id = data.get('target_library_id')
+                    new_name = data.get('new_name')
+                    
+                    if not target_library_id:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "error": True,
+                            "message": "Parameter 'target_library_id' is required",
+                            "code": "MISSING_PARAMETER"
+                        }).encode('utf-8'))
+                    else:
+                        result = tool_library.duplicate_tool(tool_id, target_library_id, new_name)
+                        
+                        if result.get('error'):
+                            if result.get('code') == 'TOOL_NOT_FOUND':
+                                self.send_response(404)
+                            elif result.get('code') == 'LIBRARY_NOT_FOUND':
+                                self.send_response(404)
+                            elif result.get('code') == 'LIBRARY_READ_ONLY':
+                                self.send_response(403)
+                            else:
+                                self.send_response(500)
+                        else:
+                            self.send_response(201)  # Created
+                        
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                else:
+                    self.send_error(400, 'Invalid path format')
+            
+            # POST /tools/search - Search for tools
+            # Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
+            elif path == '/tools/search':
+                result = tool_library.search_tools(data)
+                
+                if result.get('error'):
+                    if result.get('code') == 'INVALID_TOOL_DATA':
+                        self.send_response(400)
+                    else:
+                        self.send_response(500)
+                else:
+                    self.send_response(200)
+                
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            
+            # POST /cam/toolpath/{id}/passes - Modify pass configuration
+            # Requirements: 4.1, 4.2, 4.3, 4.5
+            elif path.startswith('/cam/toolpath/') and path.endswith('/passes'):
+                try:
+                    # Extract toolpath ID from URL path: /cam/toolpath/{id}/passes
+                    path_parts = path.split('/')
+                    if len(path_parts) >= 4:
+                        toolpath_id = path_parts[3]  # /cam/toolpath/{id}/passes
+                        
+                        # Validate required data
+                        if not data:
+                            self.send_response(400)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps({
+                                "success": False,
+                                "error": True,
+                                "message": "Pass configuration data is required",
+                                "code": "MISSING_DATA"
+                            }).encode('utf-8'))
+                            return
+                        
+                        # Get CAM product and call the modification function
+                        cam_product = cam.get_cam_product()
+                        result = cam.modify_toolpath_passes(cam_product, toolpath_id, data)
+                        
+                        # Map error codes to appropriate HTTP status codes
+                        if result.get('error'):
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'TOOLPATH_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code in ['MISSING_TOOLPATH_ID', 'MISSING_PASS_CONFIG', 'VALIDATION_FAILED']:
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                        else:
+                            self.send_response(200)
+                        
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "success": False,
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/toolpath/{id}/passes",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": False,
+                        "error": True,
+                        "message": f"Unexpected error modifying toolpath passes: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
+            # POST /cam/toolpath/{id}/linking - Modify linking configuration
+            # Requirements: 7.4, 4.4, 4.5
+            elif path.startswith('/cam/toolpath/') and path.endswith('/linking'):
+                try:
+                    # Extract toolpath ID from URL path: /cam/toolpath/{id}/linking
+                    path_parts = path.split('/')
+                    if len(path_parts) >= 4:
+                        toolpath_id = path_parts[3]  # /cam/toolpath/{id}/linking
+                        
+                        # Validate required data
+                        if not data:
+                            self.send_response(400)
+                            self.send_header('Content-type', 'application/json')
+                            self.end_headers()
+                            self.wfile.write(json.dumps({
+                                "success": False,
+                                "error": True,
+                                "message": "Linking configuration data is required",
+                                "code": "MISSING_DATA"
+                            }).encode('utf-8'))
+                            return
+                        
+                        # Get CAM product and call the modification function
+                        cam_product = cam.get_cam_product()
+                        result = cam.modify_toolpath_linking(cam_product, toolpath_id, data)
+                        
+                        # Map error codes to appropriate HTTP status codes
+                        if result.get('error'):
+                            error_code = result.get('code', 'UNKNOWN_ERROR')
+                            if error_code == 'TOOLPATH_NOT_FOUND':
+                                status_code = 404  # Not Found
+                            elif error_code in ['MISSING_TOOLPATH_ID', 'MISSING_LINKING_CONFIG', 'VALIDATION_FAILED']:
+                                status_code = 400  # Bad Request
+                            elif error_code in ['NO_APPLICATION', 'NO_DOCUMENT', 'NO_PRODUCTS', 'NO_CAM_DATA', 'NO_CAM_SETUPS', 'CAM_NOT_INITIALIZED']:
+                                status_code = 400  # Bad Request - client needs to fix their setup
+                            elif error_code == 'CAM_ACCESS_ERROR':
+                                status_code = 403  # Forbidden - access issue
+                            elif error_code == 'PARAMETERS_NOT_ACCESSIBLE':
+                                status_code = 403  # Forbidden - parameter access issue
+                            else:
+                                status_code = 500  # Internal Server Error
+                            
+                            self.send_response(status_code)
+                        else:
+                            self.send_response(200)
+                        
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps(result).encode('utf-8'))
+                    else:
+                        self.send_response(400)
+                        self.send_header('Content-type', 'application/json')
+                        self.end_headers()
+                        self.wfile.write(json.dumps({
+                            "success": False,
+                            "error": True,
+                            "message": "Invalid path format. Expected: /cam/toolpath/{id}/linking",
+                            "code": "INVALID_PATH"
+                        }).encode('utf-8'))
+                except Exception as e:
+                    self.send_response(500)
+                    self.send_header('Content-type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({
+                        "success": False,
+                        "error": True,
+                        "message": f"Unexpected error modifying toolpath linking: {str(e)}",
+                        "code": "INTERNAL_ERROR"
+                    }).encode('utf-8'))
+            
             else:
                 self.send_error(404,'Not Found')
 
         except Exception as e:
             self.send_error(500,str(e))
+
+    def do_PUT(self):
+        """Handle PUT requests for tool modification."""
+        try:
+            content_length = int(self.headers.get('Content-Length', 0))
+            put_data = self.rfile.read(content_length)
+            data = json.loads(put_data) if put_data else {}
+            path = self.path
+
+            # PUT /tools/{tool_id} - Modify a tool
+            # Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7
+            if path.startswith('/tools/') and '/duplicate' not in path:
+                tool_id = path[len('/tools/'):]
+                result = tool_library.modify_tool(tool_id, data)
+                
+                if result.get('error'):
+                    if result.get('code') == 'TOOL_NOT_FOUND':
+                        self.send_response(404)
+                    elif result.get('code') == 'TOOL_READ_ONLY':
+                        self.send_response(403)
+                    else:
+                        self.send_response(500)
+                else:
+                    self.send_response(200)
+                
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            else:
+                self.send_error(404, 'Not Found')
+
+        except Exception as e:
+            self.send_error(500, str(e))
+
+    def do_DELETE(self):
+        """Handle DELETE requests for tool deletion."""
+        try:
+            path = self.path
+
+            # DELETE /tools/{tool_id} - Delete a tool
+            # Requirements: 7.1, 7.2, 7.3, 7.4, 7.5
+            if path.startswith('/tools/'):
+                tool_id = path[len('/tools/'):]
+                result = tool_library.delete_tool(tool_id)
+                
+                if result.get('error'):
+                    if result.get('code') == 'TOOL_NOT_FOUND':
+                        self.send_response(404)
+                    elif result.get('code') in ['TOOL_READ_ONLY', 'TOOL_IN_USE']:
+                        self.send_response(403)
+                    else:
+                        self.send_response(500)
+                else:
+                    self.send_response(200)
+                
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps(result).encode('utf-8'))
+            else:
+                self.send_error(404, 'Not Found')
+
+        except Exception as e:
+            self.send_error(500, str(e))
 
 def run_server():
     global httpd

@@ -1,0 +1,245 @@
+# Implementation Plan
+
+- [x] 1. Create tool_library.py module with core infrastructure
+  - [x] 1.1 Create FusionMCPBridge/tool_library.py with module docstring and imports
+    - Import adsk.core, adsk.fusion, adsk.cam
+    - Import typing for Optional, List, Dict
+    - Add module docstring explaining purpose
+    - _Requirements: 1.1, 2.1, 3.1_
+  - [x] 1.2 Implement `_find_library_by_id()` helper function
+    - Access CAM product from active document
+    - Search local, cloud, and document libraries
+    - Return library object or None
+    - _Requirements: 1.1, 2.3_
+  - [x] 1.3 Implement `find_tool_by_id()` shared function
+    - Search all libraries for tool by entityToken
+    - Fall back to searching CAM operations
+    - Return tool object or None
+    - _Requirements: 3.4, 5.6, 7.4_
+  - [x] 1.4 Implement `serialize_tool()` for basic tool info
+    - Extract id, name, type, tool_number, diameter, overall_length
+    - Handle missing properties gracefully
+    - _Requirements: 2.2, 8.5_
+  - [x] 1.5 Implement `serialize_tool_full()` for complete tool details
+    - Include geometry (diameter, overall_length, flute_length, shaft_diameter, corner_radius)
+    - Include specifications (flute_count, material, coating)
+    - Include cutting_data (spindle_speed, feed_per_tooth, surface_speed)
+    - _Requirements: 3.1, 3.2, 3.3_
+  - [ ]* 1.6 Write property test for tool serialization round-trip
+    - **Property 14: Tool data serialization round-trip**
+    - **Validates: Requirements 9.1, 9.2, 9.3**
+
+- [x] 2. Implement library listing functionality
+  - [x] 2.1 Implement `list_libraries()` function
+    - Access toolLibraries from CAM product
+    - Iterate local, cloud, and document libraries
+    - Return structured response with name, type, tool_count, is_writable
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 2.2 Implement `_serialize_library()` helper
+    - Extract library id, name, type, tool count
+    - Determine if library is writable
+    - _Requirements: 1.2_
+  - [ ]* 2.3 Write property test for library list completeness
+    - **Property 1: Library list completeness**
+    - **Validates: Requirements 1.1, 1.2**
+
+- [x] 3. Implement tool listing functionality
+  - [x] 3.1 Implement `list_tools()` function
+    - Find library by ID using `_find_library_by_id()`
+    - Return LIBRARY_NOT_FOUND error if not found
+    - Iterate tools and serialize each with `serialize_tool()`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [ ]* 3.2 Write property test for tool list structure
+    - **Property 2: Tool list structure**
+    - **Validates: Requirements 2.1, 2.2**
+  - [ ]* 3.3 Write property test for invalid library error
+    - **Property 3: Invalid library error**
+    - **Validates: Requirements 2.3**
+
+- [x] 4. Implement tool details functionality
+  - [x] 4.1 Implement `get_tool()` function
+    - Find tool by ID using `find_tool_by_id()`
+    - Return TOOL_NOT_FOUND error if not found
+    - Return full tool details using `serialize_tool_full()`
+    - Include library context (library_id, library_name)
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [ ]* 4.2 Write property test for tool details completeness
+    - **Property 4: Tool details completeness**
+    - **Validates: Requirements 3.1, 3.2, 3.3**
+  - [ ]* 4.3 Write property test for invalid tool error
+    - **Property 5: Invalid tool error**
+    - **Validates: Requirements 3.4, 5.6, 7.4**
+
+- [x] 5. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 6. Implement tool creation functionality
+  - [x] 6.1 Implement `_is_library_writable()` helper
+    - Check library type and permissions
+    - Return boolean indicating write access
+    - _Requirements: 4.5, 5.5, 6.4, 7.3_
+  - [x] 6.2 Implement `_get_tool_type_enum()` helper
+    - Map string tool types to Fusion ToolType enum
+    - Support: flat end mill, ball end mill, drill, tap, face mill, chamfer mill
+    - _Requirements: 4.1_
+  - [x] 6.3 Implement `_deserialize_tool_data()` helper
+    - Parse geometry, specifications, cutting_data from request
+    - Validate required fields (type, diameter, overall_length)
+    - Return MISSING_REQUIRED_FIELD error if validation fails
+    - _Requirements: 4.2, 4.3, 4.4_
+  - [x] 6.4 Implement `create_tool()` function
+    - Check library is writable, return LIBRARY_READ_ONLY if not
+    - Create tool with type and geometry
+    - Set optional specifications and cutting data
+    - Return new tool id and confirmation
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [ ]* 6.5 Write property test for required fields validation
+    - **Property 6: Tool creation with required fields**
+    - **Validates: Requirements 4.2**
+  - [ ]* 6.6 Write property test for creation round-trip
+    - **Property 7: Tool creation round-trip**
+    - **Validates: Requirements 4.1, 4.3, 4.4, 4.6**
+
+- [x] 7. Implement tool modification functionality
+  - [x] 7.1 Implement `modify_tool()` function
+    - Find tool by ID, return TOOL_NOT_FOUND if not found
+    - Check library is writable, return TOOL_READ_ONLY if not
+    - Update geometry properties if provided
+    - Update specifications if provided
+    - Update cutting data if provided
+    - Return updated tool properties
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+  - [ ]* 7.2 Write property test for modification persistence
+    - **Property 8: Tool modification persistence**
+    - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.7**
+
+- [x] 8. Implement tool duplication functionality
+  - [x] 8.1 Implement `duplicate_tool()` function
+    - Find source tool by ID, return TOOL_NOT_FOUND if not found
+    - Find target library, return LIBRARY_NOT_FOUND if not found
+    - Check target library is writable, return LIBRARY_READ_ONLY if not
+    - Copy all properties from source tool
+    - Apply new name if provided
+    - Return new tool id
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [ ]* 8.2 Write property test for duplication equivalence
+    - **Property 9: Tool duplication equivalence**
+    - **Validates: Requirements 6.1, 6.2, 6.3, 6.5**
+
+- [x] 9. Implement tool deletion functionality
+  - [x] 9.1 Implement `_is_tool_in_use()` helper
+    - Search CAM operations for tool references
+    - Return boolean indicating if tool is used
+    - _Requirements: 7.2_
+  - [x] 9.2 Implement `delete_tool()` function
+    - Find tool by ID, return TOOL_NOT_FOUND if not found
+    - Check library is writable, return TOOL_READ_ONLY if not
+    - Check tool not in use, return TOOL_IN_USE if used
+    - Delete tool from library
+    - Return confirmation message
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [ ]* 9.3 Write property test for deletion verification
+    - **Property 10: Tool deletion verification**
+    - **Validates: Requirements 7.1, 7.5**
+
+- [x] 10. Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 11. Implement tool search functionality
+  - [x] 11.1 Implement `search_tools()` function
+    - Accept criteria: tool_type, diameter_min, diameter_max, material, library_ids
+    - Search specified libraries (or all if not specified)
+    - Filter by tool type if provided
+    - Filter by diameter range if provided
+    - Filter by material if provided
+    - Return matching tools with id, name, type, diameter
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+  - [ ]* 11.2 Write property test for diameter range filter
+    - **Property 11: Search diameter range filter**
+    - **Validates: Requirements 8.2**
+  - [ ]* 11.3 Write property test for type filter
+    - **Property 12: Search type filter**
+    - **Validates: Requirements 8.3**
+  - [ ]* 11.4 Write property test for search result structure
+    - **Property 13: Search result structure**
+    - **Validates: Requirements 8.1, 8.5**
+
+- [x] 12. Add HTTP endpoints to Fusion Add-In
+  - [x] 12.1 Add tool library routes to FusionMCPBridge.py
+    - GET /tool-libraries → list_libraries()
+    - GET /tool-libraries/{library_id}/tools → list_tools()
+    - GET /tools/{tool_id} → get_tool()
+    - POST /tool-libraries/{library_id}/tools → create_tool()
+    - PUT /tools/{tool_id} → modify_tool()
+    - POST /tools/{tool_id}/duplicate → duplicate_tool()
+    - DELETE /tools/{tool_id} → delete_tool()
+    - POST /tools/search → search_tools()
+    - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
+  - [x] 12.2 Remove deprecated /cam/tool/{tool_id} endpoint
+    - Remove route handler
+    - Update any internal references
+    - _Requirements: Design - Deprecation_
+
+- [x] 13. Add MCP tools to server
+  - [x] 13.1 Add config endpoints to src/fusion_mcp/config.py
+    - Add tool_libraries, tool_library_tools, tool_details endpoints
+    - Add tool_create, tool_modify, tool_duplicate, tool_delete endpoints
+    - Add tool_search endpoint
+    - _Requirements: 1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1, 8.1_
+  - [x] 13.2 Implement `list_tool_libraries` MCP tool
+    - Call GET /tool-libraries endpoint
+    - Return library list with error handling
+    - _Requirements: 1.1, 1.2, 1.3_
+  - [x] 13.3 Implement `list_library_tools` MCP tool
+    - Accept library_id parameter
+    - Call GET /tool-libraries/{library_id}/tools endpoint
+    - Return tool list with error handling
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [x] 13.4 Implement `get_tool_details` MCP tool
+    - Accept tool_id parameter
+    - Call GET /tools/{tool_id} endpoint
+    - Return full tool details with error handling
+    - _Requirements: 3.1, 3.2, 3.3, 3.4_
+  - [x] 13.5 Implement `create_tool` MCP tool
+    - Accept library_id and tool data parameters
+    - Call POST /tool-libraries/{library_id}/tools endpoint
+    - Return new tool id with error handling
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6_
+  - [x] 13.6 Implement `modify_tool` MCP tool
+    - Accept tool_id and updates parameters
+    - Call PUT /tools/{tool_id} endpoint
+    - Return updated tool with error handling
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+  - [x] 13.7 Implement `duplicate_tool` MCP tool
+    - Accept tool_id, target_library_id, new_name parameters
+    - Call POST /tools/{tool_id}/duplicate endpoint
+    - Return new tool id with error handling
+    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+  - [x] 13.8 Implement `delete_tool` MCP tool
+    - Accept tool_id parameter
+    - Call DELETE /tools/{tool_id} endpoint
+    - Return confirmation with error handling
+    - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+  - [x] 13.9 Implement `search_tools` MCP tool
+    - Accept search criteria parameters
+    - Call POST /tools/search endpoint
+    - Return matching tools with error handling
+    - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
+
+- [x] 14. Refactor cam.py to use centralized tool library
+  - [x] 14.1 Update cam.py imports
+    - Import find_tool_by_id, serialize_tool from tool_library
+    - Remove local _find_tool_by_id implementation
+    - _Requirements: Design - Refactoring_
+  - [x] 14.2 Update _get_tool_data_from_operation() in cam.py
+    - Delegate to tool_library.serialize_tool()
+    - Maintain same return format for compatibility
+    - _Requirements: Design - Refactoring_
+  - [x] 14.3 Deprecate get_tool_info MCP tool
+    - Add deprecation warning log
+    - Delegate to get_tool_details internally
+    - Add docstring noting deprecation
+    - _Requirements: Design - Deprecation_
+
+- [x] 15. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

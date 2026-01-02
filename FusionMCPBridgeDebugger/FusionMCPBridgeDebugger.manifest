@@ -1,0 +1,12 @@
+{
+	"autodeskProduct": "Fusion",
+	"type": "addin",
+	"author": "FusionMCP Contributors",
+	"description": {
+		"": "Debug tool to control FusionMCPBridge add-in remotely for development"
+	},
+	"version": "1.0.0",
+	"runOnStartup": true,
+	"supportedOS": "windows|mac",
+	"editEnabled": true
+}
