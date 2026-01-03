@@ -10,10 +10,9 @@ Usage:
 """
 
 import requests
-import json
 import sys
 import time
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
 
 class IntegrationValidator:

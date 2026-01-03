@@ -11,7 +11,6 @@ This module imports find_tool_by_id and serialize_tool from tool_library for con
 import adsk.core
 import adsk.fusion
 import adsk.cam
-import traceback
 from typing import Any, Optional
 
 # Import centralized tool functions from tool_library module
@@ -2435,7 +2434,7 @@ def analyze_setup_sequence(cam: adsk.cam.CAM, setup_id: str) -> dict:
                 
                 previous_tool_id = tool_id
                 
-            except Exception as e:
+            except Exception:
                 # Continue processing other operations if one fails
                 continue
         
@@ -4141,7 +4140,7 @@ def modify_toolpath_passes(cam: adsk.cam.CAM, toolpath_id: str, pass_config: dic
                                 "new_value": new_value,
                                 "type": "dependent_update"
                             })
-                    except Exception as e:
+                    except Exception:
                         # Log but don't fail for dependent updates
                         pass
                 
@@ -6618,7 +6617,7 @@ def _check_tool_operation_compatibility(tool_type: str, operation_type: str, pas
         
         # Check end mills in drilling operations
         if "mill" in tool_type_lower and "drill" in operation_type_lower:
-            warnings.append(f"End mill used in drilling operation - consider drill tool")
+            warnings.append("End mill used in drilling operation - consider drill tool")
         
         # Check ball mills for roughing
         if "ball" in tool_type_lower and pass_type_lower == "roughing":

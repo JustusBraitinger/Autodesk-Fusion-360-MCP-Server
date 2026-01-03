@@ -9,11 +9,8 @@ Requirements: 1.5
 """
 
 import sys
-import os
-import importlib.util
-import inspect
 import asyncio
-from typing import Dict, Any, List, Callable
+from typing import Dict, Any, Callable
 
 def load_mcp_server():
     """Load and initialize the modular MCP server."""

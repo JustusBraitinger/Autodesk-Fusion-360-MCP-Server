@@ -5,7 +5,6 @@ This module contains debug control tools:
 - toggle_response_interceptor: Toggle response interceptor for debugging
 """
 
-import logging
 from mcp.server.fastmcp import FastMCP
 from core import interceptor
 

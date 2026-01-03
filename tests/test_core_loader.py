@@ -14,8 +14,7 @@ import os
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import patch, MagicMock, Mock
-from typing import Dict, Any
+from unittest.mock import patch, MagicMock
 
 # Add Server directory to path for imports
 server_path = os.path.join(os.path.dirname(__file__), "..", "Server")

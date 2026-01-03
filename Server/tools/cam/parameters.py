@@ -8,7 +8,6 @@ This module contains tools for parameter modification:
 import logging
 import requests
 from mcp.server.fastmcp import FastMCP
-from core.request_handler import send_request
 from core.config import get_endpoints, get_headers, get_timeout
 
 # Get the MCP instance from the main server

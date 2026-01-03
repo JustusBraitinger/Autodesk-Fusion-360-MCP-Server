@@ -14,13 +14,12 @@ Tests cover:
 import pytest
 import time
 import threading
-import asyncio
 import sys
 import gc
 import os
 from pathlib import Path
-from typing import List, Dict, Any
-from unittest.mock import patch, MagicMock
+from typing import Dict, Any
+from unittest.mock import patch
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Try to import psutil, but make it optional
@@ -528,7 +527,7 @@ class TestErrorRecovery:
     
     def test_configuration_fallback_behavior(self):
         """Test fallback behavior when configuration is invalid."""
-        from core.config import get_endpoints, get_headers, get_base_url
+        from core.config import get_endpoints, get_base_url
         
         # Test with temporarily invalid configuration
         with patch('core.config._ENDPOINTS', {}):

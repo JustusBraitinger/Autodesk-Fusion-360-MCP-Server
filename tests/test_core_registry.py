@@ -11,8 +11,6 @@ Requirements: 7.1, 7.2, 7.4
 import pytest
 import sys
 import os
-from unittest.mock import MagicMock, patch
-from typing import List, Optional
 
 # Add Server directory to path for imports
 server_path = os.path.join(os.path.dirname(__file__), "..", "Server")
@@ -20,8 +18,7 @@ if server_path not in sys.path:
     sys.path.insert(0, server_path)
 
 from core.registry import (
-    ToolRegistry, ToolInfo, PromptInfo,
-    register_tool, register_prompt, get_tools, get_prompts,
+    ToolRegistry, register_tool, register_prompt, get_tools, get_prompts,
     get_tool_by_name, get_prompt_by_name, validate_dependencies,
     get_categories, get_tool_count, get_prompt_count
 )

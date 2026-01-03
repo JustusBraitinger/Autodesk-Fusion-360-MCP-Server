@@ -6,7 +6,6 @@ This script removes Python bytecode cache files and other temporary files
 that can accumulate during development.
 """
 
-import os
 import shutil
 from pathlib import Path
 
@@ -67,7 +66,7 @@ def main():
             if pycache_count == 0 and pyc_count == 0:
                 print(f"  No files to clean in {item.name}")
     
-    print(f"\nCleanup complete!")
+    print("\nCleanup complete!")
     print(f"Removed {total_pycache} __pycache__ directories")
     print(f"Removed {total_pyc} .pyc files")
 

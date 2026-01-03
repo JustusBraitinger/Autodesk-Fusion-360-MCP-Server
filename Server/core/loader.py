@@ -5,14 +5,13 @@ This module provides automatic discovery and loading of tool modules,
 with dependency validation and error handling for module loading.
 """
 
-import os
 import sys
 import importlib
 import importlib.util
 import logging
 import traceback
 import time
-from typing import List, Dict, Optional, Set, Any, Tuple
+from typing import List, Dict, Optional, Set, Any
 from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
@@ -413,7 +412,6 @@ class ModuleLoader:
         """
         logger.info(f"Loading module: {module_path}")
         
-        import time
         start_time = time.time()
         
         try:

@@ -7,9 +7,7 @@ from core.config import (
     get_base_url,
     get_endpoints,
     get_headers,
-    get_timeout,
-    validate_configuration,
-    get_categories
+    get_timeout
 )
 
 # Legacy compatibility - expose the old interface

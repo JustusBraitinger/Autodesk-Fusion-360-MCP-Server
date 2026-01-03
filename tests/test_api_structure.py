@@ -10,8 +10,6 @@ Requirements: 1.5
 
 import sys
 import os
-import json
-from typing import Dict, Any, List
 
 def load_server_config():
     """Load the server configuration."""

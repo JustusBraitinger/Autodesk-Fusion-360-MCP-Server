@@ -12,7 +12,6 @@ import pytest
 import requests
 import json
 import time
-from typing import Dict, Any, List, Optional
 
 
 def is_fusion_server_running():

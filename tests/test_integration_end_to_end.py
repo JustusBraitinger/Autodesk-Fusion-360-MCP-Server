@@ -14,9 +14,7 @@ Test Coverage:
 
 import pytest
 import requests
-import json
-import time
-from typing import Dict, Any, List, Optional, Tuple
+from typing import List
 from dataclasses import dataclass
 
 
@@ -218,13 +216,13 @@ class TestEndToEndIntegration:
                             # Should have lead-in/lead-out configuration
                             expected_keys = ["lead_in", "lead_out", "transitions"]
                             has_leads = any(key in section_data for key in expected_keys)
-                            assert has_leads, f"leads_and_transitions section missing expected keys"
+                            assert has_leads, "leads_and_transitions section missing expected keys"
                         
                         elif section_name == "linking":
                             # Should have approach/retract configuration
                             expected_keys = ["approach", "retract", "clearance"]
                             has_linking = any(key in section_data for key in expected_keys)
-                            assert has_linking, f"linking section missing expected keys"
+                            assert has_linking, "linking section missing expected keys"
                 
                 # Validate editable parameters list
                 if "editable_parameters" in data:

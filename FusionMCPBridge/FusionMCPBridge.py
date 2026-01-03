@@ -1,11 +1,11 @@
-import adsk.core, adsk.fusion, adsk.cam, traceback
+import adsk.core
+import adsk.fusion
+import adsk.cam
+import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from http import HTTPStatus
 import threading
 import json
-import time
 import queue
-from pathlib import Path
 import math
 import os
 import re
@@ -56,7 +56,7 @@ class TaskEventHandler(adsk.core.CustomEventHandler):
                             ui.messageBox(f"Task-Fehler: {str(e)}")
                         continue
                         
-        except Exception as e:
+        except Exception:
 
             pass
     

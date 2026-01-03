@@ -12,7 +12,6 @@ Usage:
 import requests
 import json
 import sys
-from typing import Dict, Any
 
 
 def test_endpoint(url: str, description: str) -> bool:
@@ -30,7 +29,7 @@ def test_endpoint(url: str, description: str) -> bool:
                 print(f"  Response: Valid JSON ({len(json.dumps(data))} chars)")
                 return True
             except json.JSONDecodeError:
-                print(f"  Response: Invalid JSON")
+                print("  Response: Invalid JSON")
                 return False
         else:
             print(f"  Response: {response.text[:100]}...")

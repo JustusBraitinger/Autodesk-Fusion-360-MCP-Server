@@ -15,18 +15,15 @@ import os
 import tempfile
 import shutil
 from pathlib import Path
-from unittest.mock import patch, MagicMock, Mock
-import importlib
-import asyncio
-from typing import Dict, Any, List
+from unittest.mock import patch, MagicMock
+from typing import List
 
 # Add Server directory to path for imports
 server_path = os.path.join(os.path.dirname(__file__), "..", "Server")
 if server_path not in sys.path:
     sys.path.insert(0, server_path)
 
-from core.loader import ModuleLoader, set_mcp_instance, load_all_modules
-from core.registry import get_tools, get_prompts, validate_dependencies
+from core.loader import ModuleLoader
 from core.config import get_endpoints, validate_configuration
 from core.request_handler import initialize_request_handler
 

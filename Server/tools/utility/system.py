@@ -11,7 +11,6 @@ This module contains system operation tools:
 """
 
 import logging
-import requests
 from mcp.server.fastmcp import FastMCP
 from core.request_handler import send_request
 from core.config import get_endpoints, get_headers

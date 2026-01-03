@@ -11,8 +11,7 @@ This module contains tools for toolpath management:
 import logging
 import requests
 from mcp.server.fastmcp import FastMCP
-from core.request_handler import send_request, send_get_request
-from core.config import get_endpoints, get_headers, get_timeout
+from core.config import get_endpoints, get_timeout
 from core import interceptor
 
 # Get the MCP instance from the main server

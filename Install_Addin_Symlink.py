@@ -4,7 +4,6 @@ Create symbolic link for Fusion 360 MCP Add-in for development.
 This allows live editing without reinstalling.
 """
 
-import os
 import sys
 from pathlib import Path
 

@@ -9,7 +9,6 @@ This module contains tools for linking parameter management:
 import logging
 import requests
 from mcp.server.fastmcp import FastMCP
-from core.request_handler import send_request
 from core.config import get_endpoints, get_headers, get_timeout
 from core import interceptor
 
@@ -166,7 +165,7 @@ def get_toolpath_linking(toolpath_id: str):
         elif hasattr(e, 'response') and e.response is not None and e.response.status_code == 400:
             return {
                 "error": True,
-                "message": f"Operationstyp unterstützt keine Linking-Parameter.",
+                "message": "Operationstyp unterstützt keine Linking-Parameter.",
                 "code": "OPERATION_NOT_SUPPORTED"
             }
         else:

@@ -7,10 +7,9 @@ This module contains export functionality tools:
 """
 
 import logging
-import requests
 from mcp.server.fastmcp import FastMCP
 from core.request_handler import send_request
-from core.config import get_endpoints, get_headers
+from core.config import get_endpoints
 
 # Get the MCP instance from the main server
 # This will be injected by the module loader

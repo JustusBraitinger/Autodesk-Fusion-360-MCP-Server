@@ -11,7 +11,7 @@ Requirements: 7.1, 7.2, 7.4
 import pytest
 import sys
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # Add Server directory to path for imports
 server_path = os.path.join(os.path.dirname(__file__), "..", "Server")

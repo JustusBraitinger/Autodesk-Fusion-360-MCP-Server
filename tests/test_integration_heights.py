@@ -10,11 +10,9 @@ Requirements: 1.1, 1.2, 2.1, 2.2, 1.3, 2.5, 4.5
 
 import sys
 import os
-import json
 import importlib.util
 import requests
-import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any
 
 class HeightIntegrationTester:
     def __init__(self):
@@ -295,7 +293,7 @@ class HeightIntegrationTester:
             else:
                 missing_in_mcp = http_height_params - mcp_height_params
                 missing_in_http = mcp_height_params - http_height_params
-                print(f"   ❌ Height parameters mismatch:")
+                print("   ❌ Height parameters mismatch:")
                 if missing_in_mcp:
                     print(f"      Missing in MCP: {missing_in_mcp}")
                 if missing_in_http:

@@ -8,7 +8,6 @@ existing toolpath APIs and that response structures remain unchanged.
 import pytest
 import requests
 import json
-from typing import Dict, Any, List
 
 
 def is_fusion_server_running():

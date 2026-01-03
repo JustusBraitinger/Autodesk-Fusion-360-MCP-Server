@@ -15,7 +15,6 @@ import urllib3
 import argparse
 import logging
 import sys
-from pathlib import Path
 
 # Disable SSL warnings and proxy for localhost
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -36,7 +35,6 @@ from core.request_handler import initialize_request_handler
 from prompts.registry import get_prompt_registry
 
 # Import templates to ensure prompts are registered
-import prompts.templates
 
 # Configure logging
 logging.basicConfig(

@@ -13,7 +13,6 @@ import pytest
 import requests
 import json
 import time
-from typing import Dict, Any, List, Optional
 import uuid
 
 
@@ -739,7 +738,7 @@ class TestComplexScenarios:
                                 assert data["name"] == toolpath["name"], \
                                     f"Special characters not preserved in name: expected '{toolpath['name']}', got '{data['name']}'"
                         except json.JSONDecodeError:
-                            pytest.fail(f"Invalid JSON response for special char toolpath")
+                            pytest.fail("Invalid JSON response for special char toolpath")
         else:
             pytest.skip("No toolpaths with special characters found")
 

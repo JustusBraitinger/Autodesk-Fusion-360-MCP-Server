@@ -116,7 +116,7 @@ def intercept_response(endpoint: str, response: requests.Response, method: str =
     # Parse JSON response data
     try:
         response_data = response.json()
-    except (json.JSONDecodeError, ValueError) as e:
+    except (json.JSONDecodeError, ValueError):
         # If JSON parsing fails, log error if interceptor enabled and re-raise
         if is_interceptor_enabled():
             log_response(endpoint, f"Failed to parse: {response.text}", method)

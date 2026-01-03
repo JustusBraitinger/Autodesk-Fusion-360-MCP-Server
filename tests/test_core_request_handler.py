@@ -11,8 +11,7 @@ Requirements: 7.1, 7.2, 7.4
 import pytest
 import sys
 import os
-import json
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, Mock
 import requests
 
 # Add Server directory to path for imports

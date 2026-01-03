@@ -15,11 +15,8 @@ Tests cover:
 import pytest
 import asyncio
 import sys
-import os
-import json
 import inspect
 from pathlib import Path
-from typing import Dict, Any, List, Set
 from unittest.mock import patch, MagicMock
 
 # Add Server directory to path for imports
@@ -49,7 +46,6 @@ class TestFastMCPInterfaceCompatibility:
     
     def test_command_line_interface_compatibility(self):
         """Test that command-line interface remains unchanged."""
-        import argparse
         from MCP_Server import main
         
         # Test that the argument parser accepts the same arguments
@@ -232,7 +228,7 @@ class TestModuleLoadingCompatibility:
     
     def test_graceful_module_loading(self):
         """Test that module loading handles errors gracefully."""
-        from core.loader import load_all_modules, get_health_status, get_error_report
+        from core.loader import load_all_modules, get_health_status
         
         # Load all modules
         loaded_modules = load_all_modules()
@@ -301,7 +297,6 @@ class TestAPIContractCompatibility:
         assert callable(send_post_request)
         
         # Test function signatures
-        import inspect
         
         # send_request should accept endpoint, data, method
         sig = inspect.signature(send_request)
@@ -375,7 +370,7 @@ class TestMCPClientCompatibility:
         
         # Verify each tool has required MCP fields
         for tool in tools_list:
-            assert hasattr(tool, 'name'), f"Tool missing name attribute"
+            assert hasattr(tool, 'name'), "Tool missing name attribute"
             assert hasattr(tool, 'description'), f"Tool {tool.name} missing description"
             
             # Verify name is valid MCP tool name
@@ -396,7 +391,7 @@ class TestMCPClientCompatibility:
         
         # Verify each prompt has required MCP fields
         for prompt in prompts_list:
-            assert hasattr(prompt, 'name'), f"Prompt missing name attribute"
+            assert hasattr(prompt, 'name'), "Prompt missing name attribute"
             
             # Verify name is valid MCP prompt name
             assert isinstance(prompt.name, str)

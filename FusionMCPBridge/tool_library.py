@@ -729,7 +729,7 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
             if num_param:
                 try:
                     tool_data["tool_number"] = int(num_param.value.value)
-                except Exception as e:
+                except Exception:
                     pass
             
             # Get tool_diameter (in mm)
@@ -737,7 +737,7 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
             if diam_param:
                 try:
                     tool_data["diameter"] = float(diam_param.value.value)
-                except Exception as e:
+                except Exception:
                     pass
             
             # Get tool_type
@@ -755,7 +755,7 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
         
         return tool_data
         
-    except Exception as e:
+    except Exception:
         return {
             "id": str(id(tool)),
             "name": "Error reading tool",

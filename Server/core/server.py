@@ -5,7 +5,6 @@ This module handles the creation and setup of the FastMCP server instance,
 including server instructions and basic configuration.
 """
 
-from typing import Optional
 import logging
 from mcp.server.fastmcp import FastMCP
 

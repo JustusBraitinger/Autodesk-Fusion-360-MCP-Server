@@ -5,7 +5,7 @@ This module provides centralized configuration management for the modular server
 including category-based endpoint organization and configuration validation.
 """
 
-from typing import Dict, Optional, Any
+from typing import Dict, Optional
 import logging
 
 logger = logging.getLogger(__name__)
