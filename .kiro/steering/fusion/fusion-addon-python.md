@@ -1,6 +1,6 @@
 ---
 inclusion: fileMatch
-fileMatchPattern: ['FusionMCPBridge/**/*.py', '**/fusion*.py', '**/cam.py', '**/tool_library.py']
+fileMatchPattern: ['FusionMCPBridge/**/*.py', '**/fusion*.py', '**/tool_library.py']
 ---
 
 # Fusion 360 Python Add-In Development

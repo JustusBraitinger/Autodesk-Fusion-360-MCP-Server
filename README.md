@@ -368,7 +368,7 @@ curl http://localhost:5002/addon/status
   - Task queue
 - Modules:
   - `FusionMCPBridge.py` - HTTP routing and request handling
-  - `cam.py` - CAM (Computer-Aided Manufacturing) functionality
+  - `handlers/manufacture/` - MANUFACTURE workspace (CAM) functionality
   - `tool_library.py` - Tool library management using Fusion 360 CAM API
 
 ---

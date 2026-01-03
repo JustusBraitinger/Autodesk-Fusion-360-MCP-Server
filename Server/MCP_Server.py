@@ -35,6 +35,7 @@ from core.request_handler import initialize_request_handler
 from prompts.registry import get_prompt_registry
 
 # Import templates to ensure prompts are registered
+from prompts import templates
 
 # Configure logging
 logging.basicConfig(

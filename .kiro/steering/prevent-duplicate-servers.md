@@ -74,9 +74,11 @@ This caused confusion, wasted development time, and created maintenance nightmar
 
 /FusionMCPBridge/
   ├── FusionMCPBridge.py     # HTTP server and routing
-  ├── cam.py                 # CAM functionality
   ├── tool_library.py        # Tool library functionality
-  └── config.py              # Add-in configuration
+  ├── config.py              # Add-in configuration
+  └── handlers/
+      ├── design/            # Design workspace handlers
+      └── manufacture/       # MANUFACTURE workspace handlers (CAM)
 ```
 
 **FORBIDDEN**:

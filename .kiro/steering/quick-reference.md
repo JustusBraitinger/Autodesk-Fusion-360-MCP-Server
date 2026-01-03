@@ -52,7 +52,7 @@ curl http://127.0.0.1:8000/sse
 ### Fusion 360 Add-in
 - `/FusionMCPBridge/FusionMCPBridge.py` - HTTP routing and handlers
 - `/FusionMCPBridge/tool_library.py` - Tool library business logic
-- `/FusionMCPBridge/cam.py` - CAM functionality
+- `/FusionMCPBridge/handlers/manufacture/` - MANUFACTURE workspace handlers
 
 ### Agent Configuration
 - `/.kiro/agents/fusion-360.json` - Kiro CLI agent config
@@ -63,6 +63,11 @@ curl http://127.0.0.1:8000/sse
 1. Restart Fusion 360 add-in (Stop → Start in Scripts and Add-Ins)
 2. Reinstall symlink: `uv run install-fusion-plugin --dev`
 3. Check Text Commands panel in Fusion 360 for Python errors
+
+### Handlers Return Empty `{}` Response
+**Root Cause**: Handler using task_queue incorrectly for read-only operations.
+**Solution**: Read-only CAM handlers should call `_impl` functions directly, NOT use task_queue.
+See "Handler Implementation Rules" section below.
 
 ### Tool Object Attribute Errors
 - Use `tool.description` instead of `tool.name`
@@ -76,6 +81,12 @@ curl http://127.0.0.1:8000/sse
 - Ensure correct transport type in agent config
 - For manual server: use HTTP transport with `http://127.0.0.1:8000/sse`
 - For agent-managed: use stdio transport with uv command
+
+### Restart Bridge Remotely
+```bash
+curl http://localhost:5002/addon/restart
+```
+Note: Bridge runs on port 5001, but restart endpoint is on port 5002.
 
 ## Fusion 360 Requirements
 - Active design document must be open
@@ -102,3 +113,60 @@ If system is broken:
 3. Restart Fusion 360 add-in
 4. Test basic endpoint: `curl http://localhost:5001/cam/toolpaths`
 5. If still broken, restart Fusion 360 completely
+
+
+## Handler Implementation Rules
+
+### When to Use task_queue
+- **USE task_queue**: For operations that MODIFY the Fusion 360 model (geometry creation, parameter changes)
+- **DO NOT use task_queue**: For READ-ONLY operations (listing toolpaths, getting parameters, querying tools)
+
+### Correct Pattern for Read-Only Handlers
+```python
+def handle_get_something(path: str, method: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """Read-only handler - call impl directly, no task_queue."""
+    try:
+        param_id = data.get("param_id")
+        if not param_id:
+            return {"status": 400, "error": True, "message": "param_id required"}
+        
+        # CORRECT: Call impl function directly
+        cam = get_cam_product()
+        if cam:
+            result = get_something_impl(cam, param_id)
+        else:
+            result = {"error": True, "message": "No CAM data", "code": "NO_CAM_DATA"}
+        
+        return {"status": 200 if not result.get("error") else 500, "data": result}
+    except Exception as e:
+        return {"status": 500, "error": True, "message": str(e)}
+```
+
+### WRONG Pattern (causes empty `{}` responses)
+```python
+def handle_get_something(path: str, method: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    """BROKEN: task_queue callback pattern doesn't work for handlers."""
+    result = {}
+    
+    def execute():
+        nonlocal result
+        result = get_something_impl()  # This never executes properly!
+    
+    # WRONG: task_queue.queue_task() doesn't execute the callback inline
+    task_queue.queue_task("get_something", callback=execute)
+    task_queue.process_tasks()  # This doesn't help either
+    
+    return {"data": result}  # Returns empty {}
+```
+
+### Why task_queue Doesn't Work for Handlers
+1. task_queue is designed for the CustomEvent pattern (main thread execution)
+2. HTTP handlers run in a background thread
+3. The callback pattern with `nonlocal result` doesn't execute synchronously
+4. Read-only Fusion 360 API calls are safe from any thread
+
+### Modular Handler Checklist
+- [ ] Handler imports only `request_router` from core (not task_queue for read-only)
+- [ ] Handler calls `_impl` function directly
+- [ ] Handler registered via `register_handlers()` at module load
+- [ ] Parent `__init__.py` imports the handler module

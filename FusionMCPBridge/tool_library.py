@@ -500,7 +500,7 @@ def list_libraries() -> Dict[str, Any]:
             return {
                 "libraries": [],
                 "total_count": 0,
-                "message": "CAM Manager not available. Please ensure CAM workspace is active."
+                "message": "CAM Manager not available. Please ensure MANUFACTURE workspace is active."
             }
         
         libraryManager = camManager.libraryManager
@@ -693,7 +693,7 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
         
     Returns:
         dict: Basic tool information including:
-            - id: Unique tool identifier
+            - id: Unique tool identifier (entityToken)
             - name: Tool name/description
             - type: Tool type string
             - tool_number: Tool number in library
@@ -706,7 +706,7 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
     try:
         # Initialize with defaults
         tool_data = {
-            "id": str(id(tool)),
+            "id": tool.entityToken if hasattr(tool, 'entityToken') else str(id(tool)),
             "name": "Unknown tool",
             "type": "unknown",
             "tool_number": None,
@@ -715,13 +715,13 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
             "overall_length": None
         }
         
-        # Extract data from tool parameters
+        # Extract data from tool parameters (the reliable way)
         if hasattr(tool, 'parameters'):
             params = tool.parameters
             
             # Get tool_description (name)
             desc_param = params.itemByName('tool_description')
-            if desc_param:
+            if desc_param and desc_param.expression:
                 tool_data["name"] = desc_param.expression.strip("'\"")
             
             # Get tool_number
@@ -732,25 +732,27 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
                 except Exception:
                     pass
             
-            # Get tool_diameter (in mm)
+            # Get tool_diameter (in mm - Fusion stores in cm, multiply by 10)
             diam_param = params.itemByName('tool_diameter')
             if diam_param:
                 try:
-                    tool_data["diameter"] = float(diam_param.value.value)
+                    # Fusion stores in cm, convert to mm
+                    tool_data["diameter"] = float(diam_param.value.value) * 10
                 except Exception:
                     pass
             
             # Get tool_type
             type_param = params.itemByName('tool_type')
-            if type_param:
+            if type_param and type_param.expression:
                 tool_data["type"] = type_param.expression.strip("'\"")
             
-            # Get tool_overallLength
+            # Get tool_overallLength (in mm - Fusion stores in cm, multiply by 10)
             length_param = params.itemByName('tool_overallLength')
             if length_param:
                 try:
-                    tool_data["overall_length"] = float(length_param.value.value)
-                except:
+                    # Fusion stores in cm, convert to mm
+                    tool_data["overall_length"] = float(length_param.value.value) * 10
+                except Exception:
                     pass
         
         return tool_data
@@ -764,24 +766,6 @@ def serialize_tool(tool: Any) -> Dict[str, Any]:
             "diameter": None,
             "diameter_unit": "mm",
             "overall_length": None
-        }
-        
-        # Extract overall length (bodyLength in Fusion API)
-        if hasattr(tool, 'bodyLength'):
-            tool_data["overall_length"] = tool.bodyLength
-        
-        return tool_data
-        
-    except Exception as e:
-        return {
-            "id": None,
-            "name": "Error accessing tool",
-            "type": "unknown",
-            "tool_number": None,
-            "diameter": None,
-            "diameter_unit": "mm",
-            "overall_length": None,
-            "error": str(e)
         }
 
 
@@ -2122,7 +2106,7 @@ def search_tools(criteria: Dict[str, Any]) -> Dict[str, Any]:
                 "tools": [],
                 "total_count": 0,
                 "search_criteria": criteria,
-                "message": "No CAM product available. Please open a document with CAM workspace."
+                "message": "No CAM product available. Please open a document with MANUFACTURE workspace."
             }
         
         if not hasattr(cam, 'toolLibraries'):

@@ -1,6 +1,8 @@
 ---
-inclusion: always
+inclusion: fileMatch
+fileMatchPattern: "Server/**/*.py*
 ---
+
 
 # Fusion MCP Modular Architecture Guide
 

@@ -12,6 +12,8 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "ruff>=0.14.10",
+    "hypothesis>=6.100.0",
+    "pytest>=8.0.0",
 ]
 
 [project.scripts]
@@ -90,3 +92,17 @@ skip-magic-trailing-comma = false
 
 # Like Black, automatically detect the appropriate line ending.
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+# IMPORTANT: Tests must be run separately for Server and FusionMCPBridge
+# due to conflicting core/ module names. See .kiro/steering/python-testing.md
+#
+# Run Server tests:     uv run pytest Server/tests/ -v
+# Run Bridge tests:     uv run pytest FusionMCPBridge/tests/ -v
+#
+# DO NOT run both together - causes import conflicts!
+testpaths = ["Server/tests", "FusionMCPBridge/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"

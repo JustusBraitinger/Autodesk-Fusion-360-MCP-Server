@@ -75,7 +75,12 @@ def send_request(endpoint: str, data: Dict[str, Any], method: str = "POST") -> D
                 json_data = json.dumps(data) if data else "{}"
                 response = requests.put(endpoint, json_data, headers=headers, timeout=timeout)
             elif method.upper() == "DELETE":
-                response = requests.delete(endpoint, headers=headers, timeout=timeout)
+                # DELETE can have a body for confirmation data
+                if data:
+                    json_data = json.dumps(data)
+                    response = requests.delete(endpoint, data=json_data, headers=headers, timeout=timeout)
+                else:
+                    response = requests.delete(endpoint, headers=headers, timeout=timeout)
             else:
                 raise ValueError(f"Unsupported HTTP method: {method}")
 

@@ -93,15 +93,15 @@ def list_cam_tools():
 
 def get_tool_info(tool_id: str):
     """
-    You can get detailed information about a specific cutting tool from the tool library.
+    You can get usage information about a specific cutting tool across all operations.
     
-    Use this to query tool geometry and specifications for making informed suggestions
-    about feeds and speeds. You get the tool_id from get_toolpath_details (in the tool section).
+    Use this to see which operations use a specific tool and get tool specifications.
+    You get the tool_id from list_cam_tools() or from get_toolpath_details() (in the tool section).
     
-    Returns complete tool data including:
-    - Geometry: diameter, overall_length, flute_length, shaft_diameter, corner_radius
-    - Specifications: flute_count, material (e.g., "carbide", "HSS"), coating (e.g., "TiAlN")
-    - Tool number in the library
+    Returns tool usage data including:
+    - Tool info: id, name, type, diameter, overall_length
+    - Operations using this tool: list of operation names and IDs
+    - Usage count across the document
     
     IMPORTANT: Tool dimensions are in the document's unit system (typically mm).
     Remember: In Fusion 360, 1 unit = 1 cm = 10 mm, so a 6mm tool shows as 0.6.
@@ -113,28 +113,23 @@ def get_tool_info(tool_id: str):
     
     Example response:
     {
-        "id": "tool_001",
-        "name": "6mm Flat Endmill",
-        "type": "flat end mill",
-        "geometry": {
-            "diameter": 0.6,
-            "diameter_unit": "mm",
-            "overall_length": 5.0,
-            "flute_length": 2.0
+        "tool": {
+            "id": "tool_001",
+            "name": "6mm Flat Endmill",
+            "type": "flat end mill",
+            "diameter": 6.0,
+            "overall_length": 50.0
         },
-        "specifications": {
-            "flute_count": 4,
-            "material": "carbide",
-            "coating": "TiAlN"
-        },
-        "tool_number": 1
+        "operations": [
+            {"id": "op_001", "name": "Adaptive1", "setup": "Setup1"}
+        ],
+        "usage_count": 1
     }
     
-    Typical use cases: Calculating appropriate feeds/speeds based on tool geometry,
-    verifying tool specifications before suggesting machining parameters.
+    Typical use cases: Finding which operations use a tool, checking tool utilization.
     """
     try:
-        endpoint = f"{get_endpoints('cam')['cam_tool']}/{tool_id}"
+        endpoint = f"{get_endpoints('cam')['cam_tool_usage']}/{tool_id}/usage"
         response = requests.get(endpoint, timeout=get_timeout())
         return interceptor.intercept_response(endpoint, response, "GET")
     except requests.ConnectionError:

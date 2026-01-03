@@ -1,0 +1,99 @@
+# Implementation Plan
+
+- [x] 1. Update MANUFACTURE workspace endpoints in config.py
+  - [x] 1.1 Update setups endpoint group with correct paths and placeholders
+    - Replace obsolete `/cam/setups/create`, `/cam/setups/{id}/modify`, `/cam/setups/{id}/delete` patterns
+    - Add `/cam/setups/{setup_id}` for GET/PUT/DELETE operations
+    - Add `/cam/setups/{setup_id}/duplicate` and `/cam/setups/{setup_id}/sequence`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4_
+  - [x] 1.2 Update toolpaths endpoint group with correct paths
+    - Change `/cam/toolpath/{id}` to `/cam/toolpaths/{toolpath_id}` (plural, correct placeholder)
+    - Add `/cam/toolpaths/with-heights` endpoint
+    - Add `/cam/toolpaths/{toolpath_id}/parameters` endpoint
+    - Update heights, passes, linking paths to use `{toolpath_id}` placeholder
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7_
+  - [x] 1.3 Add new operations endpoint group
+    - Add `/cam/operations/{operation_id}/tool` for tool assignment
+    - Add `/cam/operations/{operation_id}/heights` and related endpoints
+    - Add `/cam/operations/{operation_id}/passes` and related endpoints
+    - Add `/cam/operations/{operation_id}/linking` and related endpoints
+    - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7, 4.8, 4.9_
+  - [x] 1.4 Update tools endpoint group
+    - Add `/cam/tools` for listing CAM tools
+    - Add `/cam/tools/{tool_id}/usage` for tool usage
+    - _Requirements: 6.1, 6.2_
+  - [x] 1.5 Update tool_libraries endpoint group
+    - Add `/tool-libraries/{library_id}` for library info
+    - Add `/tool-libraries/load` and `/tool-libraries/validate-access`
+    - Update tool CRUD paths to use correct patterns
+    - _Requirements: 5.1, 5.2, 5.3, 5.4, 6.3, 6.4, 6.5, 6.6_
+  - [x] 1.6 Add new tool_search endpoint group
+    - Add `/tool-libraries/search` for basic search
+    - Add `/tool-libraries/search/advanced` for advanced search
+    - Add `/tool-libraries/search/suggestions` for suggestions
+    - _Requirements: 5.5, 5.6, 5.7_
+  - [x] 1.7 Write property test for config-handler endpoint consistency
+    - **Property 1: Config-Handler Endpoint Consistency**
+    - **Validates: Requirements 1.1, 1.2**
+
+- [x] 2. Remove obsolete endpoints from config.py
+  - [x] 2.1 Remove obsolete setup endpoints
+    - Remove `/cam/setups/create` (replaced by POST to `/cam/setups`)
+    - Remove `/cam/setups/{id}/modify` (replaced by PUT to `/cam/setups/{setup_id}`)
+    - Remove `/cam/setups/{id}/delete` (replaced by DELETE to `/cam/setups/{setup_id}`)
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [x] 2.2 Remove obsolete toolpath endpoints
+    - Remove `/cam/toolpath/{id}` singular form patterns
+    - Remove `/cam/toolpaths/heights` (replaced by `/cam/toolpaths/with-heights`)
+    - _Requirements: 7.4_
+  - [x] 2.3 Remove obsolete tool library endpoints
+    - Remove `/tool-libraries/{library_id}/tools/create` (replaced by POST to `/tool-libraries/tools`)
+    - Remove `/tool-libraries/tools/{tool_id}/modify` (replaced by PUT to `/tool-libraries/tools/{tool_id}`)
+    - Remove `/tool-libraries/tools/search` (replaced by `/tool-libraries/search`)
+    - _Requirements: 7.5, 7.6_
+  - [x] 2.4 Write property test for placeholder naming consistency
+    - **Property 2: Placeholder Naming Consistency**
+    - **Validates: Requirements 1.3**
+
+- [x] 3. Checkpoint - Verify config.py updates
+  - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 4. Enhance validation in ConfigurationManager
+  - [x] 4.1 Add endpoint pattern validation to validate_config_detailed()
+    - Detect singular vs plural path inconsistencies
+    - Detect non-standard placeholder names
+    - Add warnings for potential issues
+    - _Requirements: 8.1, 8.2_
+  - [x] 4.2 Add resolution guidance for validation issues
+    - Provide specific guidance for each detected issue type
+    - Include examples of correct patterns
+    - _Requirements: 8.3_
+  - [x] 4.3 Write property test for validation detection completeness
+    - **Property 3: Validation Detection Completeness**
+    - **Validates: Requirements 8.1, 8.2**
+  - [x] 4.4 Write property test for validation guidance provision
+    - **Property 4: Validation Guidance Provision**
+    - **Validates: Requirements 8.3**
+
+- [x] 5. Create steering file for config synchronization
+  - [x] 5.1 Create .kiro/steering/config-endpoint-sync.md
+    - Document purpose and scope
+    - Define trigger conditions for config updates
+    - Include handler-to-config mapping table
+    - Add code review checklist
+    - Document placeholder naming conventions
+    - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5_
+
+- [x] 6. Update existing tests for new endpoint structure
+  - [x] 6.1 Update test_core_config.py endpoint verification tests
+    - Update expected endpoint paths to match new structure
+    - Add tests for new endpoint groups (operations, tool_search)
+    - Verify obsolete endpoints are not present
+    - _Requirements: 1.1, 1.2, 7.1-7.6_
+  - [x] 6.2 Update test_final_validation.py endpoint tests
+    - Update backward compatibility tests for new paths
+    - Verify CAM endpoint preservation with correct paths
+    - _Requirements: 2.1-6.6_
+
+- [x] 7. Final Checkpoint - Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.

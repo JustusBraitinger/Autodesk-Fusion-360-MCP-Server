@@ -59,19 +59,27 @@ _ENDPOINTS = {
     },
     
     "cam": {
-        # Toolpath management
+        # Toolpath management (plural paths per REST conventions)
         "cam_toolpaths": f"{_BASE_URL}/cam/toolpaths",
-        "cam_toolpaths_heights": f"{_BASE_URL}/cam/toolpaths/heights",
-        "cam_toolpath": f"{_BASE_URL}/cam/toolpath",
-        "cam_toolpath_heights": f"{_BASE_URL}/cam/toolpath",  # /{id}/heights
-        "cam_toolpath_parameter": f"{_BASE_URL}/cam/toolpath",
-        "cam_toolpath_passes": f"{_BASE_URL}/cam/toolpath",  # /{id}/passes
-        "cam_toolpath_linking": f"{_BASE_URL}/cam/toolpath",  # /{id}/linking
-        "cam_setup_sequence": f"{_BASE_URL}/cam/setup",  # /{id}/sequence
+        "cam_toolpaths_heights": f"{_BASE_URL}/cam/toolpaths/with-heights",
+        "cam_toolpath": f"{_BASE_URL}/cam/toolpaths",  # /{toolpath_id}
+        "cam_toolpath_heights": f"{_BASE_URL}/cam/toolpaths",  # /{toolpath_id}/heights
+        "cam_toolpath_parameter": f"{_BASE_URL}/cam/toolpaths",  # /{toolpath_id}/parameters
+        "cam_toolpath_passes": f"{_BASE_URL}/cam/toolpaths",  # /{toolpath_id}/passes
+        "cam_toolpath_linking": f"{_BASE_URL}/cam/toolpaths",  # /{toolpath_id}/linking
+        "cam_setup_sequence": f"{_BASE_URL}/cam/setups",  # /{setup_id}/sequence
         
-        # Tool management
+        # Setup management
+        "cam_setups": f"{_BASE_URL}/cam/setups",
+        "cam_setup": f"{_BASE_URL}/cam/setups",  # /{setup_id}
+        "cam_setup_duplicate": f"{_BASE_URL}/cam/setups",  # /{setup_id}/duplicate
+        "cam_setup_toolpaths": f"{_BASE_URL}/cam/setups",  # /{setup_id}/toolpaths
+        "cam_setup_wcs": f"{_BASE_URL}/cam/setups",  # /{setup_id}/wcs
+        
+        # Tool management (operations have tools, not standalone /cam/tool endpoint)
         "cam_tools": f"{_BASE_URL}/cam/tools",
-        "cam_tool": f"{_BASE_URL}/cam/tool",
+        "cam_operation_tool": f"{_BASE_URL}/cam/operations",  # /{operation_id}/tool
+        "cam_tool_usage": f"{_BASE_URL}/cam/tools",  # /{tool_id}/usage
         
         # Tool library endpoints
         "tool_libraries": f"{_BASE_URL}/tool-libraries",

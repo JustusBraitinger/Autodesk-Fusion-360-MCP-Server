@@ -109,6 +109,6 @@ ls -la "/Users/bsport/Library/Application Support/Autodesk/Autodesk Fusion 360/A
 | MCP Server | `/Server/MCP_Server.py` |
 | Server Config | `/Server/config.py` |
 | Add-in Main | `/FusionMCPBridge/FusionMCPBridge.py` |
-| CAM Functions | `/FusionMCPBridge/cam.py` |
+| MANUFACTURE Handlers | `/FusionMCPBridge/handlers/manufacture/` |
 | Tool Libraries | `/FusionMCPBridge/tool_library.py` |
 | Agent Config | `/.kiro/agents/fusion-360.json` |

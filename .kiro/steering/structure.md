@@ -19,7 +19,6 @@ FusionMCP/
 │   ├── FusionMCPBridge.py     # Main add-in - HTTP server + geometry functions
 │   ├── FusionMCPBridge.manifest # Fusion add-in manifest
 │   ├── config.py              # Add-in configuration and endpoints
-│   ├── cam.py                 # CAM-specific functionality
 │   ├── cert.pem               # SSL certificate
 │   ├── key.pem                # SSL key
 │   └── AddInIcon.svg          # Add-in icon
